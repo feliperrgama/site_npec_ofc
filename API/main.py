@@ -24,7 +24,7 @@ app = FastAPI(title="API NPEC", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://npecfainor.vercel.app/"],
+    allow_origins=["https://npecfainor.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
