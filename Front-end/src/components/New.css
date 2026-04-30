@@ -1,0 +1,7 @@
+.shadow-new {
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+}
+
+.bg-news {
+    background-image: linear-gradient(to right, #002057, #0064c8);
+}

@@ -1,0 +1,46 @@
+# Ambiente virtual
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.sqlite3
+
+# Variáveis de ambiente
+.env
+.env.*
+
+# Uploads / arquivos gerados
+uploads/
+images/
+static/uploads/
+
+# IDEs
+.idea/
+.vscode/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Build / distribuição
+build/
+dist/
+*.egg-info/
+
+# Cache de ferramentas
+.pytest_cache/
+.mypy_cache/
+.cache/
+
+# Logs
+*.log
+
+# Arquivos temporários
+*.swp
+*.swo

@@ -1,0 +1,75 @@
+/* GhostPage.css - Professional and Minimalist Styles */
+
+/* Markdown Editor Styles */
+.w-md-editor {
+  background-color: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 0.5rem !important;
+  box-shadow: none !important;
+}
+
+.w-md-editor:focus-within {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Toolbar */
+.w-md-editor-toolbar {
+  background-color: #f9fafb !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  border-radius: 0.5rem 0.5rem 0 0 !important;
+  padding: 0.5rem !important;
+}
+
+.w-md-editor-toolbar ul li button {
+  color: #374151 !important;
+  border-radius: 0.375rem !important;
+  padding: 0.375rem !important;
+  transition: all 0.2s ease !important;
+}
+
+.w-md-editor-toolbar ul li button:hover {
+  background-color: #e5e7eb !important;
+  color: #111827 !important;
+}
+
+/* Text Area */
+.w-md-editor-text-textarea,
+.w-md-editor-text {
+  color: #111827 !important;
+  font-family: inherit !important;
+  line-height: 1.6 !important;
+  padding: 1rem !important;
+}
+
+/* Preview */
+.w-md-editor-preview {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  padding: 1rem !important;
+}
+
+/* Split View */
+.w-md-editor-bar {
+  background-color: #f3f4f6 !important;
+}
+
+/* Fullscreen Mode */
+.w-md-editor-fullscreen {
+  background-color: #ffffff !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .w-md-editor {
+    font-size: 14px !important;
+  }
+
+  .w-md-editor-toolbar {
+    padding: 0.25rem !important;
+  }
+
+  .w-md-editor-toolbar ul li button {
+    padding: 0.25rem !important;
+  }
+}
