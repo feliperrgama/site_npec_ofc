@@ -16,7 +16,7 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY") or "secret-dev"
 ALGORITHM = os.getenv("ALGORITHM") or "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES") or 30)
-MONGO_URL = os.getenv("MONGO_URL") or "mongodb+srv://npec_db_user:Rx33zk4N5LI5XXI8@npec.5kslodu.mongodb.net/"
+MONGO_URL = os.getenv("MONGO_URL") or "mongodb+srv://npec_db_user:Rx33zk4N5LI5XXI8@npec.5kslodu.mongodb.net/?tlsAllowInvalidCertificates=true"
 
 client = AsyncIOMotorClient(MONGO_URL)
 db = client.npec
