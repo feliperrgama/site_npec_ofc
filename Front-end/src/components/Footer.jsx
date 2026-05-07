@@ -8,7 +8,7 @@ function Footer() {
   ]
 
   return (
-    <footer className="w-full bg-[#021a42] text-white px-6 sm:px-10 pt-10 sm:pt-12 pb-6 sm:pb-7 font-mono">
+    <footer className="w-full bg-[#001230] text-white px-6 sm:px-10 pt-10 sm:pt-12 pb-6 sm:pb-7 font-mono">
 
       {/* Topo */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-8 pb-8 sm:pb-10 border-b border-[#1f1f1f]">
