@@ -52,7 +52,7 @@ function News() {
 
                 <section
                     ref={el => refs.current[2] = el}
-                    className={`flex justify-center mt-20 card-anim ${isVisible(2) ? "visible" : ""}`}
+                    className={`flex justify-center mt-20 mb-25 card-anim ${isVisible(2) ? "visible" : ""}`}
                 >
                     <BacktoHome />
                 </section>
