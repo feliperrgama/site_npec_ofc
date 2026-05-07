@@ -16,7 +16,7 @@ function Footer() {
         {/* Marca */}
         <div className="shrink-0">
           <h2 className="text-sm font-normal tracking-wide text-[#e0e0e0]">NPEC</h2>
-          <p className="text-[10px] tracking-[0.15em] text-[#3a3a3a] mt-1.5 uppercase font-light">
+          <p className="text-[10px] tracking-[0.15em] text-[#ffffff] mt-1.5 uppercase font-light">
             Engenharia da Computação
           </p>
         </div>
@@ -25,10 +25,10 @@ function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
           {contacts.map((c) => (
             <div key={c.label}>
-              <label className="block text-[9px] tracking-[0.18em] text-[#333] uppercase mb-1.5">
+              <label className="block text-[9px] tracking-[0.18em] text-[#ffffff] uppercase mb-1.5">
                 {c.label}
               </label>
-              <p className="text-[11px] text-[#666] font-light leading-relaxed">
+              <p className="text-[11px] text-[#ffffff] font-light leading-relaxed">
                 {c.value}
               </p>
             </div>
@@ -38,17 +38,17 @@ function Footer() {
 
       {/* Rodapé */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0 pt-5">
-        <span className="text-[10px] text-[#2e2e2e] tracking-wide font-light">
+        <span className="text-[10px] text-[#ffffff] tracking-wide font-light">
           © 2026 NPEC — Núcleo de Práticas em Engenharia da Computação
         </span>
 
         <div className="flex gap-3.5">
           <a href="#instagram" target="_blank" rel="noreferrer"
-            className="flex items-center justify-center w-7 h-7 border border-[#1f1f1f] rounded-[3px] text-[#3a3a3a] hover:border-[#3a3a3a] hover:text-[#888] transition-colors">
+            className="flex items-center justify-center w-7 h-7 border border-[#1f1f1f] rounded-[3px] text-[#ffffff] hover:border-[#3a3a3a] hover:text-[#888] transition-colors">
             <BsInstagram size={13} />
           </a>
           <a href="#github" target="_blank" rel="noreferrer"
-            className="flex items-center justify-center w-7 h-7 border border-[#1f1f1f] rounded-[3px] text-[#3a3a3a] hover:border-[#3a3a3a] hover:text-[#888] transition-colors">
+            className="flex items-center justify-center w-7 h-7 border border-[#1f1f1f] rounded-[3px] text-[#ffffff] hover:border-[#3a3a3a] hover:text-[#888] transition-colors">
             <BsGithub size={13} />
           </a>
         </div>
