@@ -10,7 +10,7 @@ function Footer() {
 
 
     return (
-        <footer className="m-auto bg-slate-800 h-130 md:h-100 lg:h-90 w-full mt-30 flex flex-col items-center text-white">
+        <footer className="m-auto bg-slate-800 h-180 md:h-100 lg:h-90 w-full mt-30 flex flex-col items-center text-white">
             {/* Div principal superior */}
             <div className='flex p-5 sm:p-5 md:pt-5 lg:pt-5 justify-around gap-5 lg:gap-20'>
                 {/* Div "Missão e Visão" */}
