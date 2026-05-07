@@ -10,7 +10,7 @@ function Footer() {
 
 
     return (
-        <footer className="m-auto bg-slate-800 h-180 md:h-100 lg:h-90 w-full mt-30 flex flex-col items-center text-white">
+        <footer className="m-auto bg-slate-800 h-200 md:h-100 lg:h-90 w-full mt-30 flex flex-col items-center text-white">
             {/* Div principal superior */}
             <div className='flex p-5 sm:p-5 md:pt-5 lg:pt-5 justify-around gap-5 lg:gap-20'>
                 {/* Div "Missão e Visão" */}
@@ -66,9 +66,9 @@ function Footer() {
             {/* Div principal inferior */}
             <div className='flex justify-between gap-10 md:gap-40 lg:gap-100 mt-10 md:mt-5 lg:mt-3'>
 
-                <p className='text-gray-500 font ml-1'>Engenharia da Computação</p>
+                <p className='text-gray-500 font ml-1 self-center'>Engenharia da Computação</p>
 
-                <p className="font-light font text-gray-600">© 2026 NPEC - Núcleo de Práticas em Engenharia da Computação</p>
+                <p className="font-light font text-gray-600 self-center">© 2026 NPEC - Núcleo de Práticas em Engenharia da Computação</p>
             </div>
             
         </footer>
