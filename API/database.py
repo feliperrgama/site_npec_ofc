@@ -1,44 +1,59 @@
-from motor.motor_asyncio import AsyncIOMotorClient
-from typing import Optional
 import os
+from typing import Optional
+
+import certifi
 from dotenv import load_dotenv
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 load_dotenv()
 
-MONGO_URL = os.getenv("MONGO_URL") or "mongodb://localhost:27017"
-DATABASE_NAME = os.getenv("DATABASE_NAME") or "npec"
+MONGO_URL: str = os.getenv("MONGO_URL", "mongodb://localhost:27017")
+DATABASE_NAME: str = os.getenv("DATABASE_NAME", "npec")
 
 
 class Database:
-    def __init__(self):
+    """Gerencia o ciclo de vida da conexão com o MongoDB."""
+
+    def __init__(self) -> None:
         self.client: Optional[AsyncIOMotorClient] = None
-        self.db = None
+        self.db: Optional[AsyncIOMotorDatabase] = None
 
-    async def connect(self):
-        if not self.client:
-            self.client = AsyncIOMotorClient(MONGO_URL)
-            self.db = self.client[DATABASE_NAME]
+    async def connect(self) -> None:
+        if self.client is not None:
+            return
 
-            await self.client.admin.command('ping')
-            print(f"✅ Conectado ao MongoDB: {DATABASE_NAME}")
+        use_tls = MONGO_URL.startswith("mongodb+srv") or "tls=true" in MONGO_URL.lower()
 
-    async def disconnect(self):
+        kwargs: dict = {}
+        if use_tls:
+            kwargs["tls"] = True
+            kwargs["tlsCAFile"] = certifi.where()
+
+        self.client = AsyncIOMotorClient(MONGO_URL, **kwargs)
+        self.db = self.client[DATABASE_NAME]
+
+        await self.client.admin.command("ping")
+        print(f"✅ Conectado ao MongoDB: {DATABASE_NAME}")
+
+    async def disconnect(self) -> None:
         if self.client:
             self.client.close()
+            self.client = None
+            self.db = None
             print("👋 Conexão com MongoDB fechada")
 
-    def get_db(self):
-        if not self.db:
-            raise Exception("Database não conectado. Chame connect() primeiro")
+    def get_db(self) -> AsyncIOMotorDatabase:
+        if self.db is None:
+            raise RuntimeError("Database não conectado. Chame connect() primeiro.")
         return self.db
 
+
+# Instância global — usada via lifespan em main.py
 database = Database()
 
-client = AsyncIOMotorClient(MONGO_URL)
-db = client[DATABASE_NAME]
 
-
-async def get_database():
-    if not database.db:
+async def get_database() -> AsyncIOMotorDatabase:
+    """Dependência FastAPI que garante a conexão antes de retornar o db."""
+    if database.db is None:
         await database.connect()
     return database.get_db()
