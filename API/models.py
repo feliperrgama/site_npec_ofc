@@ -1,58 +1,81 @@
 from datetime import datetime, timezone
-from typing import Optional
-from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, Any
+
 from bson import ObjectId
+from pydantic import BaseModel, Field, EmailStr, ConfigDict
+from pydantic_core import core_schema
+
 
 class PyObjectId(ObjectId):
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    """ObjectId compatível com Pydantic v2."""
 
     @classmethod
-    def validate(cls, v):
+    def __get_pydantic_core_schema__(
+        cls, _source_type: Any, _handler: Any
+    ) -> core_schema.CoreSchema:
+        return core_schema.json_or_python_schema(
+            json_schema=core_schema.str_schema(),
+            python_schema=core_schema.union_schema([
+                core_schema.is_instance_schema(ObjectId),
+                core_schema.chain_schema([
+                    core_schema.str_schema(),
+                    core_schema.no_info_plain_validator_function(cls.validate),
+                ]),
+            ]),
+            serialization=core_schema.plain_serializer_res_schema(
+                function=lambda v: str(v),
+                return_schema=core_schema.str_schema(),
+                when_used="json",
+            ),
+        )
+
+    @classmethod
+    def validate(cls, v: str) -> "PyObjectId":
         if not ObjectId.is_valid(v):
-            raise ValueError("Invalid ObjectId")
-        return ObjectId(v)
+            raise ValueError(f"ObjectId inválido: {v!r}")
+        return cls(v)
+
+
+_model_config = ConfigDict(
+    populate_by_name=True,
+    arbitrary_types_allowed=True,
+    json_encoders={ObjectId: str},
+)
+
 
 class UsuarioModel(BaseModel):
-    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
+    model_config = _model_config
+
+    id: Optional[PyObjectId] = Field(default=None, alias="_id")
     nome: str
     email: EmailStr
     senha: str
-    email_verificado: bool = False
     status: bool = True
     criado_em: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     atualizado_em: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
 
 class NoticiaModel(BaseModel):
-    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
-    titulo: str = Field(..., max_length=100)
+    model_config = _model_config
+
+    id: Optional[PyObjectId] = Field(default=None, alias="_id")
+    titulo: str = Field(..., max_length=200)
     conteudo: str
-    imagem_url: Optional[str] = None
     descricao: Optional[str] = None
+    imagem_url: Optional[str] = None
     usuario_id: str
     criado_em: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     atualizado_em: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
 
 class DocumentoModel(BaseModel):
-    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
-    titulo: str = Field(..., max_length=100)
-    descri: Optional[str] = None
+    model_config = _model_config
+
+    id: Optional[PyObjectId] = Field(default=None, alias="_id")
+    titulo: str = Field(..., max_length=200)
+    descricao: Optional[str] = None          # campo corrigido (era "descri")
     arquivo_url: str
+    nome_original: str                        # campo ausente no modelo original
     usuario_id: str
     criado_em: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
+    atualizado_em: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
