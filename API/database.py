@@ -1,59 +1,73 @@
 import os
+import asyncio
 from typing import Optional
 
-import certifi
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 load_dotenv()
 
-MONGO_URL: str = os.getenv("MONGO_URL", "mongodb://admin:admin123@mongodb:27017")
-DATABASE_NAME: str = os.getenv("DATABASE_NAME", "npec")
+
+MONGO_URL = os.getenv("MONGO_URL")
+DATABASE_NAME = os.getenv("DATABASE_NAME", "npec")
 
 
 class Database:
-    """Gerencia o ciclo de vida da conexão com o MongoDB."""
-
-    def __init__(self) -> None:
-        self.client: Optional[AsyncIOMotorClient] = None
-        self.db: Optional[AsyncIOMotorDatabase] = None
+    def __init__(self):
+        self._client: Optional[AsyncIOMotorClient] = None
+        self._db: Optional[AsyncIOMotorDatabase] = None
+        self._lock = asyncio.Lock()
 
     async def connect(self) -> None:
-        if self.client is not None:
-            return
+        async with self._lock:
+            if self._client is not None:
+                return
 
-        use_tls = MONGO_URL.startswith("mongodb+srv") or "tls=true" in MONGO_URL.lower()
+            if not MONGO_URL:
+                raise RuntimeError("MONGO_URL não definida no ambiente")
 
-        kwargs: dict = {}
-        if use_tls:
-            kwargs["tls"] = True
-            kwargs["tlsCAFile"] = certifi.where()
+            kwargs = {}
 
-        self.client = AsyncIOMotorClient(MONGO_URL, **kwargs)
-        self.db = self.client[DATABASE_NAME]
+            # Atlas usa TLS automaticamente
+            if MONGO_URL.startswith("mongodb+srv://"):
+                import certifi
+                kwargs.update(
+                    tls=True,
+                    tlsCAFile=certifi.where()
+                )
 
-        await self.client.admin.command("ping")
-        print(f"✅ Conectado ao MongoDB: {DATABASE_NAME}")
+            self._client = AsyncIOMotorClient(
+                MONGO_URL,
+                maxPoolSize=20,
+                minPoolSize=5,
+                serverSelectionTimeoutMS=10000,
+                **kwargs
+            )
+
+            # Teste real de conexão
+            await self._client.admin.command("ping")
+
+            self._db = self._client[DATABASE_NAME]
+
+            print(f"[MongoDB] conectado em '{DATABASE_NAME}'")
 
     async def disconnect(self) -> None:
-        if self.client:
-            self.client.close()
-            self.client = None
-            self.db = None
-            print("👋 Conexão com MongoDB fechada")
+        if self._client:
+            self._client.close()
+            self._client = None
+            self._db = None
+            print("[MongoDB] desconectado")
 
     def get_db(self) -> AsyncIOMotorDatabase:
-        if self.db is None:
-            raise RuntimeError("Database não conectado. Chame connect() primeiro.")
-        return self.db
+        if self._db is None:
+            raise RuntimeError("MongoDB não conectado")
+        return self._db
 
 
-# Instância global — usada via lifespan em main.py
 database = Database()
 
 
-async def get_database() -> AsyncIOMotorDatabase:
-    """Dependência FastAPI que garante a conexão antes de retornar o db."""
-    if database.db is None:
+async def get_database():
+    if database._db is None:
         await database.connect()
     return database.get_db()
