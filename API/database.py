@@ -7,7 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 load_dotenv()
 
-MONGO_URL: str = os.getenv("MONGO_URL", "mongodb://localhost:27017")
+MONGO_URL: str = os.getenv("MONGO_URL", "mongodb://admin:admin123@mongodb:27017")
 DATABASE_NAME: str = os.getenv("DATABASE_NAME", "npec")
 
 
