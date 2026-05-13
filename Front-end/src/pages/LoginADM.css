@@ -1,18 +1,40 @@
-/* Estilo para campos com erro (adicione uma classe no componente) */
-.input-error {
-    border-color: rgb(255, 82, 82);
-    animation: none;
+@keyframes border-color {
+    0%      { border-color: rgb(19, 239, 255) }
+    25%     { border-color: rgb(14, 173, 184); }
+    50%     { border-color: rgb(8, 100, 107); }
+    75%     { border-color: rgb(14, 173, 184); }
+    100%    { border-color: rgb(19, 239, 255); }
 }
 
-.input-error:focus {
-    border-color: rgb(255, 82, 82);
-    box-shadow: 0 0 0 2px rgba(255, 82, 82, 0.3);
+.snake-focus:focus {
+    animation: border-color 1.5s ease-in-out infinite;
 }
 
-/* Mensagem de erro */
-.error-message {
-    color: rgb(255, 82, 82);
-    font-size: 0.875rem;
-    margin-top: 0.25rem;
-    margin-left: 2rem;
+.bt {
+    background-image: linear-gradient(to right, rgb(5,206,199) 0%, rgb(5,206,199) 50%, rgb(0, 20, 73) 50%, rgb(0, 20, 73) 100%);
+    background-size: 220% 100%;
+    background-position: 0% 0%;
+    position: relative;
+    overflow: hidden;
+    color: white;
+    transition: background-position 0.5s ease-in-out;
+}
+
+.bt:hover {
+    background-position: 100% 0%;
+}
+
+.bt:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+}
+
+.bt:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.bt:focus-visible {
+    outline: 2px solid rgb(19, 239, 255);
+    outline-offset: 2px;
 }
