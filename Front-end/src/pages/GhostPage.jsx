@@ -8,8 +8,13 @@ import "./GhostPage.css";
 
 const api_url = import.meta.env.VITE_API_URL;
 
+// ─── Helper: busca token em localStorage e sessionStorage ────────────────────
+function getToken() {
+    return localStorage.getItem("access_token") || sessionStorage.getItem("access_token") || null;
+}
+
 // ─── Formulário de Notícia ────────────────────────────────────────────────────
-function NoticiaForm({ onSuccess }) {
+function NoticiaForm() {
     const [content, setContent] = useState("# Escreva aqui a sua notícia");
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
@@ -27,29 +32,32 @@ function NoticiaForm({ onSuccess }) {
             return;
         }
 
+        const token = getToken();
+        if (!token) {
+            toast.error("Sessão expirada. Faça login novamente.");
+            return;
+        }
+
         setLoading(true);
 
         try {
-            const token = localStorage.getItem("access_token");
+            // ✅ Backend usa Form(...), então enviamos FormData (multipart/form-data)
+            const formData = new FormData();
+            formData.append("titulo", title.trim());
+            formData.append("descricao", description.trim());
+            formData.append("conteudo", content.trim());
 
-            if (!token) {
-                toast.error("Você precisa estar autenticado para publicar.");
-                return;
-            }
-
-            const news = { titulo: title.trim(), descricao: description.trim(), conteudo: content.trim() };
-
-            const response = await axios.post(`${api_url}/noticias/`, news, {
+            const response = await axios.post(`${api_url}/noticias/`, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
+                    // NÃO definir Content-Type — o axios define automaticamente
+                    // com o boundary correto para multipart/form-data
                 },
             });
 
             console.log("Notícia salva com sucesso:", response.data);
             toast.success("Notícia publicada com sucesso!");
             clearAll();
-            onSuccess?.();
         } catch (error) {
             console.error("Erro ao salvar notícia:", error);
             console.error("Detalhes:", error.response?.data);
@@ -68,7 +76,6 @@ function NoticiaForm({ onSuccess }) {
 
     return (
         <div className="bg-white rounded-2xl shadow-lg p-8 space-y-6">
-            {/* Title */}
             <div>
                 <label htmlFor="noticia-title" className="block text-sm font-medium text-gray-700 mb-2">
                     Título da Notícia *
@@ -83,7 +90,6 @@ function NoticiaForm({ onSuccess }) {
                 />
             </div>
 
-            {/* Description */}
             <div>
                 <label htmlFor="noticia-description" className="block text-sm font-medium text-gray-700 mb-2">
                     Descrição da Notícia *
@@ -98,7 +104,6 @@ function NoticiaForm({ onSuccess }) {
                 />
             </div>
 
-            {/* Content Editor */}
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                     Conteúdo da Notícia *
@@ -114,7 +119,6 @@ function NoticiaForm({ onSuccess }) {
                 </div>
             </div>
 
-            {/* Actions */}
             <div className="flex justify-end gap-4 pt-2">
                 <button
                     onClick={clearAll}
@@ -146,72 +150,65 @@ function NoticiaForm({ onSuccess }) {
 }
 
 // ─── Formulário de Edital ─────────────────────────────────────────────────────
-function EditalForm({ onSuccess }) {
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [content, setContent] = useState("# Escreva aqui o edital");
+function EditalForm() {
+    const [titulo, setTitulo] = useState("");
+    const [descricao, setDescricao] = useState("");
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
 
     function clearAll() {
-        setTitle("");
-        setDescription("");
-        setContent("# Escreva aqui o edital");
+        setTitulo("");
+        setDescricao("");
         setFile(null);
+        const fileInput = document.getElementById("edital-file");
+        if (fileInput) fileInput.value = "";
+    }
+
+    function handleFileChange(e) {
+        const selected = e.target.files?.[0];
+        if (selected && selected.type !== "application/pdf") {
+            toast.error("Apenas arquivos PDF são permitidos.");
+            setFile(null);
+            return;
+        }
+        setFile(selected || null);
     }
 
     async function handleSave() {
-        if (!title.trim() || !description.trim() || !content.trim()) {
-            toast.error("Por favor, preencha todos os campos antes de publicar.");
+        if (!titulo.trim()) {
+            toast.error("O título do edital é obrigatório.");
+            return;
+        }
+        if (!file) {
+            toast.error("Selecione um arquivo PDF para o edital.");
+            return;
+        }
+
+        const token = getToken();
+        if (!token) {
+            toast.error("Sessão expirada. Faça login novamente.");
             return;
         }
 
         setLoading(true);
 
         try {
-            const token = localStorage.getItem("access_token");
+            // ✅ Backend usa Form(...) + File(...), então enviamos FormData
+            const formData = new FormData();
+            formData.append("titulo", titulo.trim());
+            formData.append("descricao", descricao.trim());
+            formData.append("file", file);
 
-            if (!token) {
-                toast.error("Você precisa estar autenticado para publicar.");
-                return;
-            }
+            const response = await axios.post(`${api_url}/documentos/`, formData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    // NÃO definir Content-Type — o axios define automaticamente
+                },
+            });
 
-            // Se houver arquivo PDF, enviar como multipart/form-data
-            if (file) {
-                const formData = new FormData();
-                formData.append("titulo", title.trim());
-                formData.append("descricao", description.trim());
-                formData.append("conteudo", content.trim());
-                formData.append("arquivo", file);
-
-                const response = await axios.post(`${api_url}/editais/`, formData, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "multipart/form-data",
-                    },
-                });
-
-                console.log("Edital salvo com sucesso:", response.data);
-            } else {
-                const edital = {
-                    titulo: title.trim(),
-                    descricao: description.trim(),
-                    conteudo: content.trim(),
-                };
-
-                const response = await axios.post(`${api_url}/editais/`, edital, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                });
-
-                console.log("Edital salvo com sucesso:", response.data);
-            }
-
+            console.log("Edital salvo com sucesso:", response.data);
             toast.success("Edital publicado com sucesso!");
             clearAll();
-            onSuccess?.();
         } catch (error) {
             console.error("Erro ao salvar edital:", error);
             console.error("Detalhes:", error.response?.data);
@@ -230,7 +227,6 @@ function EditalForm({ onSuccess }) {
 
     return (
         <div className="bg-white rounded-2xl shadow-lg p-8 space-y-6">
-            {/* Title */}
             <div>
                 <label htmlFor="edital-title" className="block text-sm font-medium text-gray-700 mb-2">
                     Título do Edital *
@@ -238,81 +234,60 @@ function EditalForm({ onSuccess }) {
                 <input
                     type="text"
                     id="edital-title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
+                    value={titulo}
+                    onChange={(e) => setTitulo(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors text-lg font-semibold text-gray-900"
                     placeholder="Digite o título do edital"
                 />
             </div>
 
-            {/* Description */}
             <div>
                 <label htmlFor="edital-description" className="block text-sm font-medium text-gray-700 mb-2">
-                    Descrição do Edital *
+                    Descrição <span className="text-gray-400 font-normal">(opcional)</span>
                 </label>
                 <textarea
                     id="edital-description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    value={descricao}
+                    onChange={(e) => setDescricao(e.target.value)}
                     rows={4}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors resize-none"
-                    placeholder="Digite uma breve descrição do edital"
+                    placeholder="Descreva brevemente o edital"
                 />
             </div>
 
-            {/* PDF Upload (opcional) */}
             <div>
                 <label htmlFor="edital-file" className="block text-sm font-medium text-gray-700 mb-2">
-                    Arquivo PDF <span className="text-gray-400 font-normal">(opcional)</span>
+                    Arquivo PDF *
                 </label>
-                <div className="flex items-center gap-3">
+                <div className="relative">
                     <input
                         type="file"
                         id="edital-file"
-                        accept="application/pdf"
-                        onChange={(e) => setFile(e.target.files?.[0] || null)}
-                        className="block w-full text-sm text-gray-500
-                            file:mr-4 file:py-2 file:px-4
-                            file:rounded-lg file:border-0
-                            file:text-sm file:font-medium
-                            file:bg-green-50 file:text-green-700
-                            hover:file:bg-green-100 transition-colors cursor-pointer
-                            border border-gray-300 rounded-lg p-2"
+                        accept=".pdf,application/pdf"
+                        onChange={handleFileChange}
+                        className="hidden"
                     />
-                    {file && (
-                        <button
-                            onClick={() => setFile(null)}
-                            className="text-red-500 hover:text-red-700 transition-colors"
-                            title="Remover arquivo"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-                    )}
-                </div>
-                {file && (
-                    <p className="mt-2 text-sm text-green-600">
-                        ✓ {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                    </p>
-                )}
-            </div>
-
-            {/* Content Editor */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Conteúdo do Edital *
-                </label>
-                <div className="border border-gray-300 rounded-lg overflow-hidden">
-                    <MDEditor
-                        value={content}
-                        onChange={setContent}
-                        height={500}
-                        data-color-mode="light"
-                        preview="edit"
-                    />
+                    <label
+                        htmlFor="edital-file"
+                        className={`flex items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+                            file
+                                ? "border-green-400 bg-green-50 hover:border-green-500"
+                                : "border-gray-300 hover:border-green-400"
+                        }`}
+                    >
+                        <div className="text-center">
+                            <FileText className={`w-8 h-8 mx-auto mb-2 ${file ? "text-green-500" : "text-gray-400"}`} />
+                            <p className={`text-sm ${file ? "text-green-700 font-medium" : "text-gray-600"}`}>
+                                {file
+                                    ? `✓ ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`
+                                    : "Clique para selecionar um arquivo PDF"}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">Máximo 10MB</p>
+                        </div>
+                    </label>
                 </div>
             </div>
 
-            {/* Actions */}
             <div className="flex justify-end gap-4 pt-2">
                 <button
                     onClick={clearAll}
@@ -345,14 +320,13 @@ function EditalForm({ onSuccess }) {
 
 // ─── Página Principal ─────────────────────────────────────────────────────────
 function GhostPage() {
-    const [activeTab, setActiveTab] = useState("noticia"); // "noticia" | "edital"
+    const [activeTab, setActiveTab] = useState("noticia");
 
     return (
         <div className="min-h-screen bg-gray-50">
             <Header />
 
             <main className="container mx-auto px-4 py-8 max-w-6xl">
-                {/* Header Section */}
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
                         <FileText className="w-8 h-8 text-blue-600" />
@@ -389,12 +363,7 @@ function GhostPage() {
                     </div>
                 </div>
 
-                {/* Form Content */}
-                {activeTab === "noticia" ? (
-                    <NoticiaForm />
-                ) : (
-                    <EditalForm />
-                )}
+                {activeTab === "noticia" ? <NoticiaForm /> : <EditalForm />}
             </main>
         </div>
     );
