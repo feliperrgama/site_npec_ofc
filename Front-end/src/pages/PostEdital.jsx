@@ -8,6 +8,11 @@ import { Upload, FileText } from 'lucide-react'
 
 const api_url = import.meta.env.VITE_API_URL
 
+// ─── Helper: busca token em localStorage e sessionStorage ────────────────────
+function getToken() {
+    return localStorage.getItem("access_token") || sessionStorage.getItem("access_token") || null;
+}
+
 function PostEdital() {
     const [titulo, setTitulo] = useState('')
     const [descricao, setDescricao] = useState('')
@@ -35,6 +40,12 @@ function PostEdital() {
             return
         }
 
+        const token = getToken()
+        if (!token) {
+            setError('Sessão expirada. Faça login novamente.')
+            return
+        }
+
         setLoading(true)
         setError('')
         setSuccess('')
@@ -45,7 +56,6 @@ function PostEdital() {
             formData.append('descricao', descricao)
             formData.append('file', file)
 
-            const token = localStorage.getItem('token')
             await axios.post(`${api_url}/documentos/`, formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -58,7 +68,6 @@ function PostEdital() {
             setDescricao('')
             setFile(null)
 
-            // Limpar o input file
             const fileInput = document.getElementById('file-input')
             if (fileInput) fileInput.value = ''
 
@@ -69,7 +78,9 @@ function PostEdital() {
         } catch (error) {
             console.error('Erro ao postar edital:', error)
             if (error.response?.status === 401) {
-                setError('Você precisa estar logado para postar editais')
+                setError('Sessão expirada. Faça login novamente.')
+            } else if (error.response?.status === 422) {
+                setError('Dados inválidos. Verifique os campos e tente novamente.')
             } else {
                 setError(error.response?.data?.detail || 'Erro ao postar edital')
             }
@@ -142,7 +153,7 @@ function PostEdital() {
                                 <input
                                     type="file"
                                     id="file-input"
-                                    accept=".pdf"
+                                    accept=".pdf,application/pdf"
                                     onChange={handleFileChange}
                                     className="hidden"
                                     required
@@ -150,15 +161,15 @@ function PostEdital() {
                                 <label
                                     htmlFor="file-input"
                                     className={`flex items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
-                                        file 
-                                            ? 'border-green-400 bg-green-50 hover:border-green-500' 
+                                        file
+                                            ? 'border-green-400 bg-green-50 hover:border-green-500'
                                             : 'border-gray-300 hover:border-blue-400'
                                     }`}
                                 >
                                     <div className="text-center">
                                         <FileText className={`w-8 h-8 mx-auto mb-2 ${file ? 'text-green-500' : 'text-gray-400'}`} />
                                         <p className={`text-sm ${file ? 'text-green-700 font-medium' : 'text-gray-600'}`}>
-                                            {file ? `Arquivo selecionado: ${file.name}` : 'Clique para selecionar um arquivo PDF'}
+                                            {file ? `✓ ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)` : 'Clique para selecionar um arquivo PDF'}
                                         </p>
                                         <p className="text-xs text-gray-400 mt-1">Máximo 10MB</p>
                                     </div>
