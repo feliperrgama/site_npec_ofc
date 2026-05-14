@@ -81,17 +81,15 @@ function Editais() {
                     </div>
                 ) : (
                     editais.map((edital) => {
-                        // Remove "Back_End/" do caminho se existir, deixando apenas "/uploads/..."
-                        let fileUrl = edital.arquivo_url.replace('Back_End/', '')
-                        // Garante que a URL comece com /
-                        if (!fileUrl.startsWith('/')) {
-                            fileUrl = '/' + fileUrl
-                        }
-                        // Monta a URL completa com a URL da API
-                        fileUrl = `${api_url}${fileUrl}`
-                        
+                        // Monta URL absoluta a partir do arquivo_url salvo no banco
+                        // O backend já salva como /uploads/documentos/<uuid>.pdf
+                        const rawUrl = edital.arquivo_url.startsWith('/')
+                            ? edital.arquivo_url
+                            : '/' + edital.arquivo_url
+                        const fileUrl = `${api_url}${rawUrl}`
+
                         console.log('URL construída:', fileUrl)
-                        
+
                         return (
                             <Edital
                                 key={edital.id}
