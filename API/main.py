@@ -5,13 +5,12 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-# Garante que a pasta onde este arquivo está seja sempre encontrada,
-# independente de onde o uvicorn for iniciado (raiz ou dentro de API/).
+# Garante que a pasta deste arquivo seja sempre encontrada, independente do CWD
 sys.path.insert(0, os.path.dirname(__file__))
 
 import bcrypt
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Depends, APIRouter, UploadFile, File, Form, status
+from fastapi import FastAPI, HTTPException, Depends, APIRouter, UploadFile, File, Form, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
@@ -20,35 +19,40 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from database import database, get_database
 
-# Carrega o .env da mesma pasta do main.py (API/.env), funciona de qualquer CWD
+# Carrega .env da pasta do main.py
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
-SECRET_KEY: str = os.getenv("SECRET_KEY", "secret-dev")
+SECRET_KEY: str = os.getenv("SECRET_KEY", "")
 ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
-# ── Uploads ──────────────────────────────────────────────────────────────────
-# Caminho absoluto → sempre relativo à pasta API/, independente do CWD
+if not SECRET_KEY:
+    raise RuntimeError(
+        "SECRET_KEY não definida no .env. "
+        "Gere um valor com: python -c \"import secrets; print(secrets.token_hex(32))\""
+    )
+
+# ── Uploads ───────────────────────────────────────────────────────────────────
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_BASE = os.path.join(_BASE_DIR, "uploads")
 DOCS_DIR = os.path.join(UPLOAD_BASE, "documentos")
+IMAGES_DIR = os.path.join(UPLOAD_BASE, "imagens")
 os.makedirs(DOCS_DIR, exist_ok=True)
+os.makedirs(IMAGES_DIR, exist_ok=True)
 
-# ── Lifespan (substitui os eventos deprecated on_event) ──────────────────────
+
+# ── Lifespan ──────────────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     await database.connect()
     db = database.get_db()
+    # Índices — idempotentes, seguros para rodar sempre
     await db.usuarios.create_index("email", unique=True)
     await db.noticias.create_index("criado_em")
     await db.documentos.create_index("titulo")
     print("✅ Aplicação iniciada com sucesso")
-    print(f"📁 Uploads configurado em: {UPLOAD_BASE}")
-
+    print(f"📁 Uploads em: {UPLOAD_BASE}")
     yield
-
-    # Shutdown
     await database.disconnect()
 
 
@@ -56,7 +60,7 @@ app = FastAPI(title="API NPEC", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],   # Em produção, substitua por lista específica de origens
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -69,8 +73,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="admin/login")
 
 # ── Segurança ─────────────────────────────────────────────────────────────────
 def gerar_hash_senha(senha: str) -> str:
-    senha_bytes = senha.encode("utf-8")[:72]
-    return bcrypt.hashpw(senha_bytes, bcrypt.gensalt(rounds=12)).decode("utf-8")
+    return bcrypt.hashpw(senha.encode("utf-8")[:72], bcrypt.gensalt(rounds=12)).decode("utf-8")
 
 
 def verificar_senha(senha: str, senha_hash: str) -> bool:
@@ -97,33 +100,47 @@ async def get_current_user(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         usuario_id: Optional[str] = payload.get("sub")
-        if usuario_id is None:
+        if not usuario_id:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
 
+    # CORREÇÃO: _id foi salvo como string (uuid4), busca correta por string
     usuario = await db.usuarios.find_one({"_id": usuario_id})
     if usuario is None:
         raise credentials_exception
     if not usuario.get("status", True):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Usuário desativado")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Usuário desativado",
+        )
     return usuario
 
 
 async def get_current_active_user(
     current_user: dict = Depends(get_current_user),
 ) -> dict:
+    # Status já verificado em get_current_user; mantém por clareza
     if not current_user.get("status", True):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Usuário inativo")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Usuário inativo"
+        )
     return current_user
 
 
 # ── Arquivos ──────────────────────────────────────────────────────────────────
-ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".pdf", ".doc", ".docx"}
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+ALLOWED_DOC_EXTENSIONS = {".pdf", ".doc", ".docx"}
+ALLOWED_IMG_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+ALLOWED_EXTENSIONS = ALLOWED_DOC_EXTENSIONS | ALLOWED_IMG_EXTENSIONS
+MAX_FILE_SIZE = 100 * 1024 * 1024  # 100 MB
 
 
-async def salvar_arquivo(file: UploadFile, pasta: str) -> str:
+async def salvar_arquivo(file: UploadFile, pasta: str) -> tuple[str, str]:
+    """
+    Salva o arquivo em disco e retorna (caminho_absoluto, url_relativa).
+    A url_relativa é o valor que deve ser persistido no banco e devolvido
+    ao frontend — ex.: /uploads/documentos/<uuid>.pdf
+    """
     if not file.filename:
         raise HTTPException(status_code=400, detail="Arquivo sem nome")
 
@@ -138,18 +155,25 @@ async def salvar_arquivo(file: UploadFile, pasta: str) -> str:
     if len(content) > MAX_FILE_SIZE:
         raise HTTPException(status_code=400, detail="Arquivo muito grande (máx 10 MB)")
 
-    nome = f"{uuid.uuid4()}{ext}"
-    caminho = os.path.join(pasta, nome)
+    nome_arquivo = f"{uuid.uuid4()}{ext}"
+    caminho_abs = os.path.join(pasta, nome_arquivo)
+
     try:
-        with open(caminho, "wb") as f:
+        with open(caminho_abs, "wb") as f:
             f.write(content)
     except OSError as e:
         raise HTTPException(status_code=500, detail=f"Erro ao salvar arquivo: {e}")
 
-    return caminho
+    # Monta URL relativa a partir do diretório de uploads (montado em /uploads)
+    url_relativa = "/" + os.path.relpath(caminho_abs, _BASE_DIR).replace(os.sep, "/")
+    return caminho_abs, url_relativa
 
 
 def deletar_arquivo(caminho: str) -> bool:
+    """Remove arquivo do disco se existir. Aceita caminho absoluto ou relativo."""
+    # Normaliza: se for URL relativa (/uploads/...) converte para absoluto
+    if caminho.startswith("/uploads/"):
+        caminho = os.path.join(_BASE_DIR, caminho.lstrip("/"))
     if caminho and os.path.exists(caminho):
         try:
             os.remove(caminho)
@@ -177,7 +201,10 @@ async def health_check(db: AsyncIOMotorDatabase = Depends(get_database)):
         await db.command("ping")
         return {"status": "healthy", "database": "connected"}
     except Exception:
-        return {"status": "unhealthy", "database": "disconnected"}
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"status": "unhealthy", "database": "disconnected"},
+        )
 
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
@@ -191,9 +218,9 @@ async def registro_usuario(
     if len(senha) < 6:
         raise HTTPException(status_code=400, detail="Senha deve ter no mínimo 6 caracteres")
     if len(senha.encode("utf-8")) > 72:
-        raise HTTPException(status_code=400, detail="Senha muito longa. Máximo 72 bytes.")
+        raise HTTPException(status_code=400, detail="Senha muito longa (máx 72 bytes)")
     if await db.usuarios.find_one({"email": email}):
-        raise HTTPException(status_code=400, detail="Email já cadastrado")
+        raise HTTPException(status_code=400, detail="E-mail já cadastrado")
 
     usuario = {
         "_id": str(uuid.uuid4()),
@@ -202,6 +229,7 @@ async def registro_usuario(
         "senha": gerar_hash_senha(senha),
         "status": True,
         "criado_em": datetime.now(timezone.utc),
+        "atualizado_em": datetime.now(timezone.utc),
     }
     await db.usuarios.insert_one(usuario)
     return {"message": "Usuário criado com sucesso", "user_id": usuario["_id"]}
@@ -225,7 +253,11 @@ async def login(
     return {
         "access_token": criar_token(usuario["_id"]),
         "token_type": "bearer",
-        "user": {"id": usuario["_id"], "nome": usuario["nome"], "email": usuario["email"]},
+        "user": {
+            "id": usuario["_id"],
+            "nome": usuario["nome"],
+            "email": usuario["email"],
+        },
     }
 
 
@@ -257,11 +289,16 @@ async def alterar_senha(
     if len(new_password) < 6:
         raise HTTPException(status_code=400, detail="Nova senha deve ter no mínimo 6 caracteres")
     if len(new_password.encode("utf-8")) > 72:
-        raise HTTPException(status_code=400, detail="Nova senha muito longa. Máximo 72 bytes.")
+        raise HTTPException(status_code=400, detail="Nova senha muito longa (máx 72 bytes)")
 
     await db.usuarios.update_one(
         {"_id": current_user["_id"]},
-        {"$set": {"senha": gerar_hash_senha(new_password)}},
+        {
+            "$set": {
+                "senha": gerar_hash_senha(new_password),
+                "atualizado_em": datetime.now(timezone.utc),
+            }
+        },
     )
     return {"message": "Senha alterada com sucesso"}
 
@@ -269,17 +306,30 @@ async def alterar_senha(
 # ── Notícias ──────────────────────────────────────────────────────────────────
 @noticia.post("/", status_code=status.HTTP_201_CREATED)
 async def criar_noticia(
+    request: Request,
     titulo: str = Form(..., min_length=3, max_length=200),
     conteudo: str = Form(..., min_length=10),
     descricao: Optional[str] = Form(None),
+    imagem: Optional[UploadFile] = File(None),   # CORREÇÃO: campo de imagem adicionado
     current_user: dict = Depends(get_current_active_user),
     db: AsyncIOMotorDatabase = Depends(get_database),
 ):
+    imagem_url: Optional[str] = None
+    if imagem and imagem.filename:
+        ext = os.path.splitext(imagem.filename)[1].lower()
+        if ext not in ALLOWED_IMG_EXTENSIONS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Imagem deve ser: {sorted(ALLOWED_IMG_EXTENSIONS)}",
+            )
+        _, imagem_url = await salvar_arquivo(imagem, IMAGES_DIR)
+
     nova = {
         "_id": str(uuid.uuid4()),
         "titulo": titulo,
         "descricao": descricao,
         "conteudo": conteudo,
+        "imagem_url": imagem_url,           # CORREÇÃO: persistido corretamente
         "usuario_id": current_user["_id"],
         "criado_em": datetime.now(timezone.utc),
         "atualizado_em": datetime.now(timezone.utc),
@@ -294,6 +344,8 @@ async def listar_noticias(
     skip: int = 0,
     db: AsyncIOMotorDatabase = Depends(get_database),
 ):
+    if limit > 200:
+        limit = 200  # Evita dumps acidentais gigantes
     cursor = db.noticias.find().sort("criado_em", -1).skip(skip).limit(limit)
     noticias = await cursor.to_list(length=limit)
     for item in noticias:
@@ -319,19 +371,33 @@ async def atualizar_noticia(
     titulo: Optional[str] = Form(None),
     descricao: Optional[str] = Form(None),
     conteudo: Optional[str] = Form(None),
+    imagem: Optional[UploadFile] = File(None),
     current_user: dict = Depends(get_current_active_user),
     db: AsyncIOMotorDatabase = Depends(get_database),
 ):
-    if not await db.noticias.find_one({"_id": noticia_id}):
+    existente = await db.noticias.find_one({"_id": noticia_id})
+    if not existente:
         raise HTTPException(status_code=404, detail="Notícia não encontrada")
 
     update: dict = {}
-    if titulo:
+    if titulo is not None:
         update["titulo"] = titulo
-    if conteudo:
+    if conteudo is not None:
         update["conteudo"] = conteudo
     if descricao is not None:
         update["descricao"] = descricao
+
+    if imagem and imagem.filename:
+        # Remove imagem antiga antes de salvar a nova
+        if existente.get("imagem_url"):
+            deletar_arquivo(existente["imagem_url"])
+        ext = os.path.splitext(imagem.filename)[1].lower()
+        if ext not in ALLOWED_IMG_EXTENSIONS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Imagem deve ser: {sorted(ALLOWED_IMG_EXTENSIONS)}",
+            )
+        _, update["imagem_url"] = await salvar_arquivo(imagem, IMAGES_DIR)
 
     if update:
         update["atualizado_em"] = datetime.now(timezone.utc)
@@ -346,8 +412,14 @@ async def deletar_noticia(
     current_user: dict = Depends(get_current_active_user),
     db: AsyncIOMotorDatabase = Depends(get_database),
 ):
-    if not await db.noticias.find_one({"_id": noticia_id}):
+    existente = await db.noticias.find_one({"_id": noticia_id})
+    if not existente:
         raise HTTPException(status_code=404, detail="Notícia não encontrada")
+
+    # Remove imagem do disco ao deletar a notícia
+    if existente.get("imagem_url"):
+        deletar_arquivo(existente["imagem_url"])
+
     await db.noticias.delete_one({"_id": noticia_id})
     return {"message": "Notícia removida com sucesso"}
 
@@ -361,12 +433,13 @@ async def criar_documento(
     current_user: dict = Depends(get_current_active_user),
     db: AsyncIOMotorDatabase = Depends(get_database),
 ):
-    caminho = await salvar_arquivo(file, DOCS_DIR)
+    # CORREÇÃO: persiste url_relativa no banco (não o caminho absoluto do servidor)
+    _, arquivo_url = await salvar_arquivo(file, DOCS_DIR)
     doc = {
         "_id": str(uuid.uuid4()),
         "titulo": titulo,
         "descricao": descricao,
-        "arquivo_url": caminho,
+        "arquivo_url": arquivo_url,         # URL acessível pelo frontend
         "nome_original": file.filename,
         "usuario_id": current_user["_id"],
         "criado_em": datetime.now(timezone.utc),
@@ -382,6 +455,8 @@ async def listar_documentos(
     skip: int = 0,
     db: AsyncIOMotorDatabase = Depends(get_database),
 ):
+    if limit > 200:
+        limit = 200
     cursor = db.documentos.find().sort("criado_em", -1).skip(skip).limit(limit)
     docs = await cursor.to_list(length=limit)
     for d in docs:
@@ -413,7 +488,7 @@ async def atualizar_documento(
         raise HTTPException(status_code=404, detail="Documento não encontrado")
 
     update: dict = {}
-    if titulo:
+    if titulo is not None:
         update["titulo"] = titulo
     if descricao is not None:
         update["descricao"] = descricao
