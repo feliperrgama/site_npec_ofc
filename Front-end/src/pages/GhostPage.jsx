@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import "./GhostPage.css";
 
-const api_url = import.meta.env.VITE_API_URL;
+const api_url = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 // ─── Helper: busca token em localStorage e sessionStorage ────────────────────
 function getToken() {
@@ -64,6 +64,9 @@ function NoticiaForm() {
 
             if (error.response?.status === 401) {
                 toast.error("Sessão expirada. Faça login novamente.");
+                localStorage.removeItem("access_token");
+                sessionStorage.removeItem("access_token");
+                window.location.href = "/login";
             } else if (error.response?.status === 422) {
                 toast.error("Dados inválidos. Verifique os campos e tente novamente.");
             } else {
@@ -215,6 +218,9 @@ function EditalForm() {
 
             if (error.response?.status === 401) {
                 toast.error("Sessão expirada. Faça login novamente.");
+                localStorage.removeItem("access_token");
+                sessionStorage.removeItem("access_token");
+                window.location.href = "/login";
             } else if (error.response?.status === 422) {
                 toast.error("Dados inválidos. Verifique os campos e tente novamente.");
             } else {
