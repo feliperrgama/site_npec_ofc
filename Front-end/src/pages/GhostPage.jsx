@@ -7,6 +7,7 @@ import axios from "axios";
 import "./GhostPage.css";
 
 const api_url = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const loginadm_route = import.meta.env.VITE_LOGIN_PAGE_ROUTE || "/";
 
 // ─── Helper: busca token em localStorage e sessionStorage ────────────────────
 function getToken() {
@@ -66,7 +67,7 @@ function NoticiaForm() {
                 toast.error("Sessão expirada. Faça login novamente.");
                 localStorage.removeItem("access_token");
                 sessionStorage.removeItem("access_token");
-                window.location.href = "/login";
+                window.location.href = loginadm_route;
             } else if (error.response?.status === 422) {
                 toast.error("Dados inválidos. Verifique os campos e tente novamente.");
             } else {
@@ -220,7 +221,7 @@ function EditalForm() {
                 toast.error("Sessão expirada. Faça login novamente.");
                 localStorage.removeItem("access_token");
                 sessionStorage.removeItem("access_token");
-                window.location.href = "/login";
+                window.location.href = loginadm_route;
             } else if (error.response?.status === 422) {
                 toast.error("Dados inválidos. Verifique os campos e tente novamente.");
             } else {
