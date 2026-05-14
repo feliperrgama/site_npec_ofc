@@ -30,7 +30,7 @@ function NoticiaForm({ onSuccess }) {
         setLoading(true);
 
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
 
             if (!token) {
                 toast.error("Você precisa estar autenticado para publicar.");
@@ -169,7 +169,7 @@ function EditalForm({ onSuccess }) {
         setLoading(true);
 
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
 
             if (!token) {
                 toast.error("Você precisa estar autenticado para publicar.");
