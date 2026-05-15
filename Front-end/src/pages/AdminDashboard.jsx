@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
-import { FileText, Newspaper, LogOut, Trash2 } from 'lucide-react'
+import { FileText, Newspaper, LogOut, Trash2, Layers } from 'lucide-react'
 import './AdminDashboard.css'
 
 function AdminDashboard() {
@@ -24,6 +24,13 @@ function AdminDashboard() {
             description: 'Fazer upload de editais e documentos em PDF',
             icon: FileText,
             path: '/post_edital',
+            color: 'bg-[#002057] hover:bg-[#0064c8]'
+        },
+        {
+            title: 'Postar Projetos',
+            description: 'Cadastrar novos projetos do núcleo para divulgação',
+            icon: Layers,
+            path: '/post_projeto',
             color: 'bg-[#002057] hover:bg-[#0064c8]'
         },
         {

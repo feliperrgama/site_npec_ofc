@@ -1,4 +1,5 @@
 import './App.css'
+import 'react-toastify/dist/ReactToastify.css'
 import { Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
 import GhostPage from './pages/GhostPage'
@@ -6,8 +7,10 @@ import LoginADM from './pages/LoginADM'
 import AdminDashboard from './pages/AdminDashboard'
 import Sobre from './pages/Sobre'
 import Equipe from './pages/Equipe'
+import Projetos from './pages/Projetos'
 import Editais from './pages/Editais'
 import PostEdital from './pages/PostEdital'
+import PostProjeto from './pages/PostProjeto'
 import DeleteNews from './pages/DeleteNews'
 import DeleteEditais from './pages/DeleteEditais'
 import News from './pages/News'
@@ -26,9 +29,11 @@ function App() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path={ghost_page_route} element={<GhostPage />} />
         <Route path='/page_sobre' element={<Sobre />} />
+        <Route path='/page_projetos' element={<Projetos />} />
         <Route path='/page_equipe' element={<Equipe />} />
         <Route path='/page_editais' element={<Editais />} />
         <Route path='/post_edital' element={<PostEdital />} />
+        <Route path='/post_projeto' element={<PostProjeto />} />
         <Route path='/delete_news' element={<DeleteNews />} />
         <Route path='/delete_editais' element={<DeleteEditais />} />
         <Route path='/page_noticias' element={<News />} />

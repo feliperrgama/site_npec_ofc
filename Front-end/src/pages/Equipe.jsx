@@ -13,7 +13,7 @@ function Equipe() {
         { name: "Matheus Botelho", job: "Coordenador do NPEC", description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid, perspiciatis! Natus fugiat nesciunt iure voluptas aperiam culpa magnam sint itaque assumenda, suscipit sequi in. Saepe voluptatem labore temporibus sunt maxime?" }
     ]
 
-    const imageModules = import.meta.globEager('../assets/integrants/*.{png,jpg,jpeg,svg,webp}')
+    const imageModules = import.meta.glob('../assets/integrants/*.{png,jpg,jpeg,svg,webp}', { eager: true })
     const imageMap = Object.entries(imageModules).reduce((map, [path, module]) => {
         const fileName = path.split('/').pop().replace(/\.[^.]+$/, '')
         return { ...map, [fileName]: module.default }

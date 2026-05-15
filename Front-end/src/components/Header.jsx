@@ -16,6 +16,7 @@ function Header() {
         // Nos atributos href dos objetos devem estar os endpoints dessas respectivas páginas
         {label: "Home", route: "/"},
         {label: "Sobre", route: "/page_sobre"},
+        {label: "Projetos", route: "/page_projetos"},
         {label: "Equipe", route: "/page_equipe"},
         {label: "Notícias", route: "/page_noticias"},
         {label: "Editais", route: "/page_editais"}
