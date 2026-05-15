@@ -13,6 +13,12 @@ function Equipe() {
         { name: "Matheus Botelho", job: "Coordenador do NPEC", description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid, perspiciatis! Natus fugiat nesciunt iure voluptas aperiam culpa magnam sint itaque assumenda, suscipit sequi in. Saepe voluptatem labore temporibus sunt maxime?" }
     ]
 
+    const imageModules = import.meta.globEager('../assets/integrants/*.{png,jpg,jpeg,svg,webp}')
+    const imageMap = Object.entries(imageModules).reduce((map, [path, module]) => {
+        const fileName = path.split('/').pop().replace(/\.[^.]+$/, '')
+        return { ...map, [fileName]: module.default }
+    }, {})
+
     return (
         <div className="bg-slate-50 min-h-screen text-slate-900">
             <Header />
@@ -25,14 +31,26 @@ function Equipe() {
                 </section>
 
                 <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {monitores.map((monitor) => (
-                        <article key={monitor.name} className="rounded-[28px] border border-slate-200 bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
-                            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-[#002057] text-white text-lg font-semibold">{monitor.name.split(" ").map((n) => n[0]).join("")}</div>
-                            <h2 className="text-xl font-semibold text-slate-900">{monitor.name}</h2>
-                            <p className="mt-2 text-sm font-medium uppercase tracking-[0.2em] text-slate-500">{monitor.job}</p>
-                            <p className="mt-5 text-slate-600 leading-7">{monitor.description}</p>
-                        </article>
-                    ))}
+                    {monitores.map((monitor) => {
+                        const photoSrc = imageMap[monitor.name]
+                        return (
+                            <article key={monitor.name} className="rounded-[28px] border border-slate-200 bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col items-center text-center">
+                                {photoSrc ? (
+                                    <img
+                                        src={photoSrc}
+                                        alt={`Foto de ${monitor.name}`}
+                                        loading="lazy"
+                                        className="mb-6 h-20 w-20 rounded-full object-cover ring-2 ring-[#002057]/15"
+                                    />
+                                ) : (
+                                    <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#002057] text-white text-lg font-semibold">{monitor.name.split(" ").map((n) => n[0]).join("")}</div>
+                                )}
+                                <h2 className="text-xl font-semibold text-slate-900">{monitor.name}</h2>
+                                <p className="mt-2 text-sm font-medium uppercase tracking-[0.2em] text-slate-500">{monitor.job}</p>
+                                <p className="mt-5 text-slate-600 leading-7">{monitor.description}</p>
+                            </article>
+                        )
+                    })}
                 </section>
 
                 <section className="mt-16 flex justify-center">
