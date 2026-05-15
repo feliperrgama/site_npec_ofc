@@ -17,9 +17,9 @@ import News from './pages/News'
 import NewContent from './components/NewContent'
 import { ToastContainer } from 'react-toastify'
 
-const ghost_page_route = import.meta.env.VITE_GHOST_PAGE_ROUTE
-const loginadm_route = import.meta.env.VITE_LOGIN_PAGE_ROUTE
-const admin_dashboard_route = import.meta.env.VITE_ADMIN_DASHBOARD_ROUTE
+const ghost_page_route = import.meta.env.VITE_GHOST_PAGE_ROUTE || "/ghostpage"
+const loginadm_route = import.meta.env.VITE_LOGIN_PAGE_ROUTE || "/loginadm"
+const admin_dashboard_route = import.meta.env.VITE_ADMIN_DASHBOARD || "/admin/dashboard"
 
 function App() {
   return (

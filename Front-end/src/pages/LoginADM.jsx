@@ -13,6 +13,7 @@ function LoginADM() {
   const [saveLogin, setSaveLogin] = useState(false);
   const [loading, setLoading]   = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const dashboardPath = import.meta.env.VITE_ADMIN_DASHBOARD || "/admin/dashboard";
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -54,7 +55,7 @@ function LoginADM() {
       storage.setItem("user", JSON.stringify(data.user));
 
       toast.success(`Bem-vindo, ${data.user.nome}!`);
-      navigate("/admin/dashboard");
+      navigate(dashboardPath);
     } catch {
       toast.error("Erro ao conectar com o servidor. Tente novamente.");
     } finally {
