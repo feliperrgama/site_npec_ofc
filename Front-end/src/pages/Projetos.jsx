@@ -34,8 +34,8 @@ function Projetos() {
                 <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">Inovação, impacto e experiências práticas em engenharia.</h1>
                 <p className="mt-5 text-base leading-8 text-slate-600 sm:text-lg">Conheça os projetos que representam nossas áreas de atuação: tecnologia, pesquisa, educação e desenvolvimento profissional.</p>
               </div>
-              <NavLink to="/page_equipe" className="inline-flex items-center gap-2 rounded-full bg-[#002057] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#001934]">
-                Ver equipe responsável <ArrowRight size={18} />
+              <NavLink to="/page_editais" className="inline-flex items-center gap-2 rounded-full bg-[#002057] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#001934]">
+                Publicar projetos <ArrowRight size={18} />
               </NavLink>
             </div>
 
