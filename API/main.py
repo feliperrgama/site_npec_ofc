@@ -62,9 +62,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="API NPEC", version="1.0.0", lifespan=lifespan)
 
+# Lista de origens permitidas
+origins = [
+    "https://npecfainor.vercel.app",  # Seu frontend oficial
+    "http://localhost:3000",          # Caso precise testar localmente
+    "http://127.0.0.1:3000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # Em produção, substitua por lista específica de origens
+    allow_origins=origins,            # Usa a lista específica em vez de "*"
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
