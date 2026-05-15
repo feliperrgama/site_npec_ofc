@@ -27,3 +27,4 @@ gunicorn==25.3.0
 certifi>=2024.2.2
 pydantic[email]>=2.7.0,<3.0.0
 pydantic-settings>=2.2.0,<3.0.0
+cloudinary==1.44.2
