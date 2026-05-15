@@ -81,12 +81,11 @@ function Editais() {
                     </div>
                 ) : (
                     editais.map((edital) => {
-                        // Monta URL absoluta a partir do arquivo_url salvo no banco
-                        // O backend já salva como /uploads/documentos/<uuid>.pdf
-                        const rawUrl = edital.arquivo_url.startsWith('/')
+                        // Se já for URL absoluta (Cloudinary), usa direto;
+                        // caso contrário monta a partir da api_url
+                        const fileUrl = edital.arquivo_url.startsWith('http')
                             ? edital.arquivo_url
-                            : '/' + edital.arquivo_url
-                        const fileUrl = `${api_url}${rawUrl}`
+                            : `${api_url}${edital.arquivo_url.startsWith('/') ? '' : '/'}${edital.arquivo_url}`
 
                         console.log('URL construída:', fileUrl)
 
