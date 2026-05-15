@@ -2,7 +2,7 @@ import { BsInstagram, BsGithub } from 'react-icons/bs'
 
 function Footer() {
   const contacts = [
-    { label: "E-mail", value: "npec@gmail.com" },
+    { label: "E-mail", value: "nucleodecomputacao@academico.fainor.com.br" },
     { label: "Endereço", value: "Av. Luís Eduardo Magalhães, 1305 — Candeias, Vitória da Conquista, BA" },
     { label: "Atendimento", value: "Seg–Sex, 8h às 17h" },
   ]
