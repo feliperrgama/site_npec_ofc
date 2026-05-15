@@ -26,7 +26,7 @@ function Equipe() {
             <main className="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
                 <section className="mx-auto max-w-4xl text-center mb-16">
                     <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">Equipe NPEC</p>
-                    <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[#002057] sm:text-5xl">Profissionais que conduzem nosso núcleo</h1>
+                    <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[#002057] sm:text-5xl">Discentes que conduzem nosso núcleo</h1>
                     <p className="mt-6 text-base leading-8 text-slate-600 sm:text-lg">Conheça os integrantes do NPEC e o papel de cada um no desenvolvimento de projetos, gestão e comunicação.</p>
                 </section>
 
