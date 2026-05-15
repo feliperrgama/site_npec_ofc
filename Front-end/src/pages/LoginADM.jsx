@@ -4,7 +4,6 @@ import { toast } from "react-toastify";
 import LoginLogo from "../components/LoginLogo";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-const admin_dashboard_route = import.meta.env.VITE_ADMIN_DASHBOARD_ROUTE;
 
 function LoginADM() {
   const navigate = useNavigate();
@@ -55,7 +54,7 @@ function LoginADM() {
       storage.setItem("user", JSON.stringify(data.user));
 
       toast.success(`Bem-vindo, ${data.user.nome}!`);
-      navigate(admin_dashboard_route);
+      navigate("/ghostpage");
     } catch {
       toast.error("Erro ao conectar com o servidor. Tente novamente.");
     } finally {
