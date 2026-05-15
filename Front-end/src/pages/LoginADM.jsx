@@ -54,7 +54,7 @@ function LoginADM() {
       storage.setItem("user", JSON.stringify(data.user));
 
       toast.success(`Bem-vindo, ${data.user.nome}!`);
-      navigate("/ghostpage");
+      navigate("/admin/dashboard");
     } catch {
       toast.error("Erro ao conectar com o servidor. Tente novamente.");
     } finally {
