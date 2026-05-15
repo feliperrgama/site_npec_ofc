@@ -34,6 +34,13 @@ function AdminDashboard() {
             color: 'bg-[#002057] hover:bg-[#0064c8]'
         },
         {
+            title: 'Remover Projetos',
+            description: 'Deletar projetos publicados na página de projetos',
+            icon: Trash2,
+            path: '/delete_projetos',
+            color: 'bg-orange-600 hover:bg-orange-700'
+        },
+        {
             title: 'Remover Notícias',
             description: 'Deletar notícias do portal',
             icon: Trash2,

@@ -13,6 +13,7 @@ import PostEdital from './pages/PostEdital'
 import PostProjeto from './pages/PostProjeto'
 import DeleteNews from './pages/DeleteNews'
 import DeleteEditais from './pages/DeleteEditais'
+import DeleteProjetos from './pages/DeleteProjetos'
 import News from './pages/News'
 import NewContent from './components/NewContent'
 import { ToastContainer } from 'react-toastify'
@@ -37,6 +38,7 @@ function App() {
         <Route path='/post_projeto' element={<PostProjeto />} />
         <Route path='/delete_news' element={<DeleteNews />} />
         <Route path='/delete_editais' element={<DeleteEditais />} />
+        <Route path='/delete_projetos' element={<DeleteProjetos />} />
         <Route path='/page_noticias' element={<News />} />
         <Route path='/noticias/:id' element={<NewContent />} />
       </Routes>
