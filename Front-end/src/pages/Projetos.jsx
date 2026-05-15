@@ -84,11 +84,11 @@ function Projetos() {
             <h3 className="text-xl font-semibold">Foco técnico</h3>
             <p className="mt-4 text-slate-200 leading-7">Desenvolvemos soluções com foco em software, IA, infraestrutura e produtos digitais que ampliam conhecimento e aplicabilidade.</p>
           </div>
-          <div className="rounded-[28px] bg-white border border-slate-200 p-8 shadow-sm">
+          <div className="rounded-[28px] bg-[#002057] p-8 text-white shadow-sm">
             <h3 className="text-xl font-semibold text-slate-900">Metodologia</h3>
             <p className="mt-4 text-slate-600 leading-7">Trabalhamos com ciclos iterativos, prototipagem rápida e parceria entre alunos, professores e empresas para entregar resultados consistentes.</p>
           </div>
-          <div className="rounded-[28px] bg-white border border-slate-200 p-8 shadow-sm">
+          <div className="rounded-[28px] bg-[#002057] p-8 text-white shadow-sm">
             <h3 className="text-xl font-semibold text-slate-900">Impacto</h3>
             <p className="mt-4 text-slate-600 leading-7">Os projetos visam gerar valor acadêmico e social, ampliando a visibilidade do núcleo e fortalecendo a cultura de inovação na instituição.</p>
           </div>
