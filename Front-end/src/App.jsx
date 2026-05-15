@@ -19,6 +19,7 @@ import { ToastContainer } from 'react-toastify'
 
 const ghost_page_route = import.meta.env.VITE_GHOST_PAGE_ROUTE
 const loginadm_route = import.meta.env.VITE_LOGIN_PAGE_ROUTE
+const admin_dashboard_route = import.meta.env.VITE_ADMIN_DASHBOARD_ROUTE
 
 function App() {
   return (
@@ -26,7 +27,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path={loginadm_route} element={<LoginADM />}/>
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path={admin_dashboard_route} element={<AdminDashboard />} />
         <Route path={ghost_page_route} element={<GhostPage />} />
         <Route path='/page_sobre' element={<Sobre />} />
         <Route path='/page_projetos' element={<Projetos />} />
