@@ -9,11 +9,12 @@ from typing import Optional
 sys.path.insert(0, os.path.dirname(__file__))
 
 import bcrypt
+import cloudinary
+import cloudinary.uploader
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends, APIRouter, UploadFile, File, Form, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.staticfiles import StaticFiles
 from jose import JWTError, jwt
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
@@ -32,13 +33,16 @@ if not SECRET_KEY:
         "Gere um valor com: python -c \"import secrets; print(secrets.token_hex(32))\""
     )
 
-# ── Uploads ───────────────────────────────────────────────────────────────────
-_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_BASE = os.path.join(_BASE_DIR, "uploads")
-DOCS_DIR = os.path.join(UPLOAD_BASE, "documentos")
-IMAGES_DIR = os.path.join(UPLOAD_BASE, "imagens")
-os.makedirs(DOCS_DIR, exist_ok=True)
-os.makedirs(IMAGES_DIR, exist_ok=True)
+# ── Cloudinary ────────────────────────────────────────────────────────────────
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME", ""),
+    api_key=os.getenv("CLOUDINARY_API_KEY", ""),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET", ""),
+    secure=True,
+)
+
+if not os.getenv("CLOUDINARY_CLOUD_NAME"):
+    raise RuntimeError("CLOUDINARY_CLOUD_NAME não definida no .env.")
 
 
 # ── Lifespan ──────────────────────────────────────────────────────────────────
@@ -51,7 +55,7 @@ async def lifespan(app: FastAPI):
     await db.noticias.create_index("criado_em")
     await db.documentos.create_index("titulo")
     print("✅ Aplicação iniciada com sucesso")
-    print(f"📁 Uploads em: {UPLOAD_BASE}")
+    print("☁️  Cloudinary configurado")
     yield
     await database.disconnect()
 
@@ -65,8 +69,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.mount("/uploads", StaticFiles(directory=UPLOAD_BASE), name="uploads")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="admin/login")
 
@@ -137,9 +139,8 @@ MAX_FILE_SIZE = 100 * 1024 * 1024  # 100 MB
 
 async def salvar_arquivo(file: UploadFile, pasta: str) -> tuple[str, str]:
     """
-    Salva o arquivo em disco e retorna (caminho_absoluto, url_relativa).
-    A url_relativa é o valor que deve ser persistido no banco e devolvido
-    ao frontend — ex.: /uploads/documentos/<uuid>.pdf
+    Faz upload do arquivo para o Cloudinary e retorna (public_id, secure_url).
+    A secure_url é o valor persistido no banco e devolvido ao frontend.
     """
     if not file.filename:
         raise HTTPException(status_code=400, detail="Arquivo sem nome")
@@ -153,34 +154,50 @@ async def salvar_arquivo(file: UploadFile, pasta: str) -> tuple[str, str]:
 
     content = await file.read()
     if len(content) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=400, detail="Arquivo muito grande (máx 10 MB)")
+        raise HTTPException(status_code=400, detail="Arquivo muito grande (máx 100 MB)")
 
-    nome_arquivo = f"{uuid.uuid4()}{ext}"
-    caminho_abs = os.path.join(pasta, nome_arquivo)
+    # Determina resource_type: PDFs e docs precisam de "raw"; imagens usam "image"
+    resource_type = "image" if ext in ALLOWED_IMG_EXTENSIONS else "raw"
 
     try:
-        with open(caminho_abs, "wb") as f:
-            f.write(content)
-    except OSError as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao salvar arquivo: {e}")
+        result = cloudinary.uploader.upload(
+            content,
+            resource_type=resource_type,
+            folder=pasta,
+            use_filename=True,
+            unique_filename=True,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao enviar arquivo para o Cloudinary: {e}")
 
-    # Monta URL relativa a partir do diretório de uploads (montado em /uploads)
-    url_relativa = "/" + os.path.relpath(caminho_abs, _BASE_DIR).replace(os.sep, "/")
-    return caminho_abs, url_relativa
+    public_id: str = result["public_id"]
+    secure_url: str = result["secure_url"]
+    return public_id, secure_url
 
 
-def deletar_arquivo(caminho: str) -> bool:
-    """Remove arquivo do disco se existir. Aceita caminho absoluto ou relativo."""
-    # Normaliza: se for URL relativa (/uploads/...) converte para absoluto
-    if caminho.startswith("/uploads/"):
-        caminho = os.path.join(_BASE_DIR, caminho.lstrip("/"))
-    if caminho and os.path.exists(caminho):
+def deletar_arquivo(public_id_ou_url: str) -> bool:
+    """Remove arquivo do Cloudinary pelo public_id ou URL."""
+    if not public_id_ou_url:
+        return False
+    # Se for URL completa do Cloudinary, extrai o public_id
+    if public_id_ou_url.startswith("http"):
+        # Ex: https://res.cloudinary.com/<cloud>/raw/upload/v123/<folder>/<id>.pdf
+        # O public_id é tudo após "/upload/v<version>/" sem a extensão
         try:
-            os.remove(caminho)
-            return True
-        except OSError:
-            pass
-    return False
+            partes = public_id_ou_url.split("/upload/")
+            sem_versao = partes[1].split("/", 1)[1]  # remove "v<version>/"
+            public_id = os.path.splitext(sem_versao)[0]
+        except (IndexError, AttributeError):
+            public_id = public_id_ou_url
+    else:
+        public_id = public_id_ou_url
+
+    try:
+        cloudinary.uploader.destroy(public_id, resource_type="raw")
+        cloudinary.uploader.destroy(public_id, resource_type="image")
+        return True
+    except Exception:
+        return False
 
 
 # ── Routers ───────────────────────────────────────────────────────────────────
@@ -322,7 +339,7 @@ async def criar_noticia(
                 status_code=400,
                 detail=f"Imagem deve ser: {sorted(ALLOWED_IMG_EXTENSIONS)}",
             )
-        _, imagem_url = await salvar_arquivo(imagem, IMAGES_DIR)
+        _, imagem_url = await salvar_arquivo(imagem, "npec/imagens")
 
     nova = {
         "_id": str(uuid.uuid4()),
@@ -397,7 +414,7 @@ async def atualizar_noticia(
                 status_code=400,
                 detail=f"Imagem deve ser: {sorted(ALLOWED_IMG_EXTENSIONS)}",
             )
-        _, update["imagem_url"] = await salvar_arquivo(imagem, IMAGES_DIR)
+        _, update["imagem_url"] = await salvar_arquivo(imagem, "npec/imagens")
 
     if update:
         update["atualizado_em"] = datetime.now(timezone.utc)
@@ -434,7 +451,7 @@ async def criar_documento(
     db: AsyncIOMotorDatabase = Depends(get_database),
 ):
     # CORREÇÃO: persiste url_relativa no banco (não o caminho absoluto do servidor)
-    _, arquivo_url = await salvar_arquivo(file, DOCS_DIR)
+    _, arquivo_url = await salvar_arquivo(file, "npec/documentos")
     doc = {
         "_id": str(uuid.uuid4()),
         "titulo": titulo,
