@@ -54,6 +54,8 @@ async def lifespan(app: FastAPI):
     await db.usuarios.create_index("email", unique=True)
     await db.noticias.create_index("criado_em")
     await db.documentos.create_index("titulo")
+    await db.projetos.create_index("criado_em")
+    await db.projetos.create_index("status")
     print("✅ Aplicação iniciada com sucesso")
     print("☁️  Cloudinary configurado")
     yield
@@ -211,6 +213,7 @@ def deletar_arquivo(public_id_ou_url: str) -> bool:
 admin = APIRouter(prefix="/admin", tags=["Admin"])
 noticia = APIRouter(prefix="/noticias", tags=["Notícias"])
 documentos = APIRouter(prefix="/documentos", tags=["Documentos"])
+projetos = APIRouter(prefix="/projetos", tags=["Projetos"])
 
 
 # ── Health ────────────────────────────────────────────────────────────────────
@@ -539,7 +542,166 @@ async def deletar_documento(
     return {"message": "Documento removido com sucesso"}
 
 
+# ── Projetos ──────────────────────────────────────────────────────────────────
+STATUS_PROJETOS = [
+    "Em desenvolvimento",
+    "Fase de testes",
+    "Planejamento",
+    "Lançado",
+    "Publicação Aberta",
+]
+
+
+@projetos.post("/", status_code=status.HTTP_201_CREATED)
+async def criar_projeto(
+    titulo: str = Form(..., min_length=3, max_length=200),
+    categoria: str = Form(..., min_length=2, max_length=100),
+    descricao: str = Form(..., min_length=10),
+    status_projeto: str = Form("Em desenvolvimento"),
+    imagem: Optional[UploadFile] = File(None),
+    current_user: dict = Depends(get_current_active_user),
+    db: AsyncIOMotorDatabase = Depends(get_database),
+):
+    if status_projeto not in STATUS_PROJETOS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Status inválido. Opções: {STATUS_PROJETOS}",
+        )
+
+    imagem_url: Optional[str] = None
+    if imagem and imagem.filename:
+        ext = os.path.splitext(imagem.filename)[1].lower()
+        if ext not in ALLOWED_IMG_EXTENSIONS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Imagem deve ser: {sorted(ALLOWED_IMG_EXTENSIONS)}",
+            )
+        _, imagem_url = await salvar_arquivo(imagem, "npec/projetos")
+
+    novo = {
+        "_id": str(uuid.uuid4()),
+        "titulo": titulo,
+        "categoria": categoria,
+        "descricao": descricao,
+        "status": status_projeto,
+        "imagem_url": imagem_url,
+        "usuario_id": current_user["_id"],
+        "criado_em": datetime.now(timezone.utc),
+        "atualizado_em": datetime.now(timezone.utc),
+    }
+    await db.projetos.insert_one(novo)
+    return {"message": "Projeto criado com sucesso", "projeto_id": novo["_id"]}
+
+
+@projetos.get("/")
+async def listar_projetos(
+    limit: int = 50,
+    skip: int = 0,
+    status_filtro: Optional[str] = None,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+):
+    if limit > 200:
+        limit = 200
+    filtro: dict = {}
+    if status_filtro:
+        if status_filtro not in STATUS_PROJETOS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Status inválido. Opções: {STATUS_PROJETOS}",
+            )
+        filtro["status"] = status_filtro
+    cursor = db.projetos.find(filtro).sort("criado_em", -1).skip(skip).limit(limit)
+    lista = await cursor.to_list(length=limit)
+    for item in lista:
+        item["id"] = item.pop("_id")
+    return lista
+
+
+@projetos.get("/status")
+async def listar_status_projetos():
+    """Retorna todos os status disponíveis para projetos."""
+    return {"status": STATUS_PROJETOS}
+
+
+@projetos.get("/{projeto_id}")
+async def buscar_projeto(
+    projeto_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+):
+    item = await db.projetos.find_one({"_id": projeto_id})
+    if not item:
+        raise HTTPException(status_code=404, detail="Projeto não encontrado")
+    item["id"] = item.pop("_id")
+    return item
+
+
+@projetos.put("/{projeto_id}")
+async def atualizar_projeto(
+    projeto_id: str,
+    titulo: Optional[str] = Form(None),
+    categoria: Optional[str] = Form(None),
+    descricao: Optional[str] = Form(None),
+    status_projeto: Optional[str] = Form(None),
+    imagem: Optional[UploadFile] = File(None),
+    current_user: dict = Depends(get_current_active_user),
+    db: AsyncIOMotorDatabase = Depends(get_database),
+):
+    existente = await db.projetos.find_one({"_id": projeto_id})
+    if not existente:
+        raise HTTPException(status_code=404, detail="Projeto não encontrado")
+
+    update: dict = {}
+    if titulo is not None:
+        update["titulo"] = titulo
+    if categoria is not None:
+        update["categoria"] = categoria
+    if descricao is not None:
+        update["descricao"] = descricao
+    if status_projeto is not None:
+        if status_projeto not in STATUS_PROJETOS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Status inválido. Opções: {STATUS_PROJETOS}",
+            )
+        update["status"] = status_projeto
+
+    if imagem and imagem.filename:
+        if existente.get("imagem_url"):
+            deletar_arquivo(existente["imagem_url"])
+        ext = os.path.splitext(imagem.filename)[1].lower()
+        if ext not in ALLOWED_IMG_EXTENSIONS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Imagem deve ser: {sorted(ALLOWED_IMG_EXTENSIONS)}",
+            )
+        _, update["imagem_url"] = await salvar_arquivo(imagem, "npec/projetos")
+
+    if update:
+        update["atualizado_em"] = datetime.now(timezone.utc)
+        await db.projetos.update_one({"_id": projeto_id}, {"$set": update})
+
+    return {"message": "Projeto atualizado com sucesso"}
+
+
+@projetos.delete("/{projeto_id}", status_code=status.HTTP_200_OK)
+async def deletar_projeto(
+    projeto_id: str,
+    current_user: dict = Depends(get_current_active_user),
+    db: AsyncIOMotorDatabase = Depends(get_database),
+):
+    existente = await db.projetos.find_one({"_id": projeto_id})
+    if not existente:
+        raise HTTPException(status_code=404, detail="Projeto não encontrado")
+
+    if existente.get("imagem_url"):
+        deletar_arquivo(existente["imagem_url"])
+
+    await db.projetos.delete_one({"_id": projeto_id})
+    return {"message": "Projeto removido com sucesso"}
+
+
 # ── Registrar routers ─────────────────────────────────────────────────────────
 app.include_router(admin)
 app.include_router(noticia)
 app.include_router(documentos)
+app.include_router(projetos)
