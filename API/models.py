@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from enum import Enum
 from typing import Optional, Any
 
 from bson import ObjectId
@@ -76,6 +77,28 @@ class DocumentoModel(BaseModel):
     descricao: Optional[str] = None          # campo corrigido (era "descri")
     arquivo_url: str
     nome_original: str                        # campo ausente no modelo original
+    usuario_id: str
+    criado_em: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    atualizado_em: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class StatusProjeto(str, Enum):
+    em_desenvolvimento = "Em desenvolvimento"
+    fase_de_testes = "Fase de testes"
+    planejamento = "Planejamento"
+    lancado = "Lançado"
+    publicacao_aberta = "Publicação Aberta"
+
+
+class ProjetoModel(BaseModel):
+    model_config = _model_config
+
+    id: Optional[PyObjectId] = Field(default=None, alias="_id")
+    titulo: str = Field(..., max_length=200)
+    categoria: str
+    descricao: str
+    status: StatusProjeto = StatusProjeto.em_desenvolvimento
+    imagem_url: Optional[str] = None
     usuario_id: str
     criado_em: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     atualizado_em: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
