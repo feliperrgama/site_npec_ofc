@@ -10,5 +10,8 @@ services:
       - "8000:8000"
 
     environment:
-      MONGO_URL: mongodb+srv://<npec>:<xLjaJCTkHjv5R448>@npec.5kslodu.mongodb.net/?appName=NPEC
+      MONGO_URL: mongodb+srv://npec:Aw9ejaErrialMadT@npec.5kslodu.mongodb.net/?appName=NPEC
       DATABASE_NAME: npec
+      CLOUDINARY_CLOUD_NAME: drbwunrbs
+      CLOUDINARY_API_KEY: 417743739357487
+      CLOUDINARY_API_SECRET: 2H5wU_nPAs2pPXcfluSLF5Obyoo
