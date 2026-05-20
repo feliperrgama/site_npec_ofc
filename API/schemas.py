@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from typing import Optional, Annotated, Any
 
 from bson import ObjectId
@@ -144,3 +145,40 @@ class MensagemResponse(BaseModel):
 class ErrorResponse(BaseModel):
     detail: str
     status_code: int
+
+
+# ── Projetos ─────────────────────────────────────────────────────────────────
+class StatusProjeto(str, Enum):
+    em_desenvolvimento = "Em desenvolvimento"
+    fase_de_testes = "Fase de testes"
+    planejamento = "Planejamento"
+    lancado = "Lançado"
+    publicacao_aberta = "Publicação Aberta"
+
+
+class ProjetoBase(BaseModel):
+    titulo: str = Field(..., min_length=3, max_length=200)
+    categoria: str = Field(..., min_length=2, max_length=100)
+    descricao: str = Field(..., min_length=10)
+    status: StatusProjeto = StatusProjeto.em_desenvolvimento
+
+
+class CriarProjeto(ProjetoBase):
+    pass
+
+
+class AtualizarProjeto(BaseModel):
+    titulo: Optional[str] = Field(None, min_length=3, max_length=200)
+    categoria: Optional[str] = Field(None, min_length=2, max_length=100)
+    descricao: Optional[str] = Field(None, min_length=10)
+    status: Optional[StatusProjeto] = None
+
+
+class ProjetoResponse(ProjetoBase):
+    model_config = _cfg
+
+    id: str = Field(..., alias="_id")
+    imagem_url: Optional[str] = None
+    usuario_id: str
+    criado_em: datetime
+    atualizado_em: Optional[datetime] = None
