@@ -1,5 +1,4 @@
 import Header from '../components/Header'
-import MainLogo from '../components/MainLogo'
 import BlueButton from '../components/buttons/BlueButton'
 import GrayButton from '../components/buttons/GrayButton'
 import Footer from '../components/Footer'
@@ -53,7 +52,7 @@ function Home() {
 
         <section className="mt-14 grid gap-6 md:grid-cols-3">
           {highlights.map((item) => (
-            <div key={item.title} className="rounded-[28px] bg-white border border-slate-200 p-8 shadow-sm">
+            <div key={item.title} className="rounded-[28px] bg-white border border-slate-200 p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
               <h3 className="text-xl font-semibold text-slate-900 mb-3">{item.title}</h3>
               <p className="text-slate-600 leading-7">{item.description}</p>
             </div>
