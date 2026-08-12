@@ -1,3 +1,12 @@
-.div {
+/*
+  Antes: ".div { background-image: ... }" selecionava a TAG <div>
+  inteira — ou seja, qualquer <div> em qualquer página que importasse
+  este CSS ganhava esse gradiente de fundo. Isso nunca foi usado no
+  JSX (nenhum elemento tinha className="div"), então na prática era
+  regra morta, mas também um risco sério caso alguém criasse uma div
+  sem className específica futuramente. Convertido para uma classe
+  utilitária explícita e opt-in.
+*/
+.gradient-brand {
     background-image: linear-gradient(to right, #002057, #0064c8);
 }
