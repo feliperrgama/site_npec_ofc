@@ -3,12 +3,13 @@ import Footer from "../components/Footer"
 import MainLogo from '../components/MainLogo'
 import BacktoHome from "../components/buttons/BacktoHome"
 import { Eye, Zap, BadgeCheck } from "lucide-react"
+import "./Sobre.css"
 
 function Sobre() {
     const divs = [
         { title: "Missão", content: "Promover a formação de profissionais de Engenharia da Computação através de práticas inovadoras, pesquisa aplicada e projetos que agreguem valor técnico e social", icon: <Zap /> },
         { title: "Visão", content: "Ser referência em excelência acadêmica e tecnológica, contribuindo para o desenvolvimento de soluções inovadoras que transformem positivamente a sociedade.", icon: <Eye /> },
-        { title: "Valores", content: ["✓ Inovação e criatividade", "✓ Excelência técnica", "✓ Colaboração e trabalho em equipe", "✓ Responsabilidade social"], icon: <BadgeCheck /> }
+        { title: "Valores", content: ["Inovação e criatividade", "Excelência técnica", "Colaboração e trabalho em equipe", "Responsabilidade social"], icon: <BadgeCheck /> }
     ]
 
     return (
@@ -34,13 +35,16 @@ function Sobre() {
 
                 <section className="mt-14 grid gap-6 md:grid-cols-3">
                     {divs.map((div) => (
-                        <div key={div.title} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <div key={div.title} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
                             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#002057] text-white">{div.icon}</div>
                             <h4 className="mt-5 text-xl font-semibold text-slate-900">{div.title}</h4>
                             {Array.isArray(div.content) ? (
                                 <ul className="mt-4 space-y-2 text-slate-600 leading-7">
                                     {div.content.map((phrase) => (
-                                        <li key={phrase}>{phrase}</li>
+                                        <li key={phrase} className="flex items-start gap-2">
+                                            <BadgeCheck className="w-4 h-4 text-[#0064c8] shrink-0 mt-1" />
+                                            <span>{phrase}</span>
+                                        </li>
                                     ))}
                                 </ul>
                             ) : (
@@ -51,9 +55,9 @@ function Sobre() {
                 </section>
 
                 <section className="mt-14">
-                    <div className="mx-auto max-w-4xl rounded-[28px] bg-[#f8fafc] border border-slate-200 p-10 shadow-sm">
-                        <h3 className="text-2xl font-semibold text-slate-900">Vínculo com o Curso de Engenharia da Computação</h3>
-                        <p className="mt-5 text-slate-600 leading-8">O NPEC é uma extensão natural do currículo de Engenharia da Computação, oferecendo aos alunos oportunidades de aprendizado prático complementar aos conteúdos teóricos das disciplinas. Através de projetos reais, pesquisa e colaborações com a indústria, os estudantes desenvolvem as competências necessárias para enfrentar os desafios do mercado de trabalho moderno.</p>
+                    <div className="gradient-brand mx-auto max-w-4xl rounded-[28px] p-10 shadow-sm">
+                        <h3 className="text-2xl font-semibold text-white">Vínculo com o Curso de Engenharia da Computação</h3>
+                        <p className="mt-5 text-slate-100 leading-8">O NPEC é uma extensão natural do currículo de Engenharia da Computação, oferecendo aos alunos oportunidades de aprendizado prático complementar aos conteúdos teóricos das disciplinas. Através de projetos reais, pesquisa e colaborações com a indústria, os estudantes desenvolvem as competências necessárias para enfrentar os desafios do mercado de trabalho moderno.</p>
                     </div>
                 </section>
 
