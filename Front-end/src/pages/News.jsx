@@ -29,6 +29,16 @@ function News() {
         return () => observers.forEach(obs => obs.disconnect())
     }, [])
 
+    // Fecha o modal com a tecla Esc, comportamento esperado em qualquer modal
+    useEffect(() => {
+        if (!selectedNoticiaId) return
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') setSelectedNoticiaId(null)
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [selectedNoticiaId])
+
     const isVisible = (index) => visibleItems.includes(index)
 
     return (
@@ -62,6 +72,8 @@ function News() {
                 <div
                     className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
                     onClick={() => setSelectedNoticiaId(null)}
+                    role="dialog"
+                    aria-modal="true"
                 >
                     <div
                         className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-3xl bg-white shadow-2xl"
@@ -69,7 +81,8 @@ function News() {
                     >
                         <button
                             type="button"
-                            className="sticky top-0 right-0 float-right p-6 text-slate-400 hover:text-slate-900 transition z-10"
+                            aria-label="Fechar"
+                            className="sticky top-0 right-0 float-right p-6 text-slate-400 hover:text-slate-900 transition z-10 focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-300 rounded-full"
                             onClick={() => setSelectedNoticiaId(null)}
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
