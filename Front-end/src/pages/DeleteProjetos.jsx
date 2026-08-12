@@ -1,39 +1,59 @@
 import { useState, useEffect } from 'react'
+import axios from 'axios'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import BacktoHome from '../components/buttons/BacktoHome'
-import { Trash2, AlertCircle, Layers } from 'lucide-react'
+import { Trash2, AlertCircle, Layers, Inbox } from 'lucide-react'
+import { authHeader } from '../utils/auth'
+
+const api_url = import.meta.env.VITE_API_URL
 
 function DeleteProjetos() {
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
+  // Antes: projetos vinham só do localStorage do navegador de quem postou,
+  // então visitantes e outros administradores nunca viam os mesmos dados.
+  // Agora busca do backend, no mesmo padrão usado por notícias e editais.
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('npec_projects')
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (Array.isArray(parsed)) {
-          setProjects(parsed)
-        }
+    const fetchProjects = async () => {
+      try {
+        const response = await axios.get(`${api_url}/projetos/`)
+        setProjects(response.data)
+      } catch (err) {
+        console.error('Erro ao buscar projetos:', err)
+        setError('Não foi possível carregar os projetos. Tente novamente em instantes.')
+      } finally {
+        setLoading(false)
       }
-    } catch (err) {
-      console.error('Erro ao carregar projetos:', err)
-      setError('Não foi possível carregar os projetos.')
-    } finally {
-      setLoading(false)
     }
+
+    fetchProjects()
   }, [])
 
-  const handleDelete = () => {
-    if (deleteConfirm === null) return
+  const handleDelete = async (projectId) => {
+    setDeleting(true)
+    setError('')
 
-    const updated = projects.filter((_, index) => index !== deleteConfirm)
-    setProjects(updated)
-    localStorage.setItem('npec_projects', JSON.stringify(updated))
-    setDeleteConfirm(null)
+    try {
+      await axios.delete(`${api_url}/projetos/${projectId}`, {
+        headers: authHeader(),
+      })
+      setProjects((prev) => prev.filter((p) => p.id !== projectId))
+      setDeleteConfirm(null)
+    } catch (err) {
+      console.error('Erro ao deletar projeto:', err)
+      if (err.response?.status === 401) {
+        setError('Sessão expirada. Faça login novamente para remover projetos.')
+      } else {
+        setError('Erro ao deletar projeto. Verifique se você tem permissão.')
+      }
+    } finally {
+      setDeleting(false)
+    }
   }
 
   return (
@@ -48,7 +68,7 @@ function DeleteProjetos() {
           </div>
 
           {error && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 mb-8 text-red-700 flex gap-3">
+            <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 mb-8 text-red-700 flex gap-3">
               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
               <p>{error}</p>
             </div>
@@ -60,13 +80,15 @@ function DeleteProjetos() {
               <p className="mt-4 text-slate-600">Carregando projetos...</p>
             </div>
           ) : projects.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-slate-600">Nenhum projeto encontrado.</p>
+            <div className="text-center py-16 rounded-2xl border border-dashed border-slate-300 bg-white">
+              <Inbox className="w-10 h-10 mx-auto text-slate-300 mb-3" />
+              <p className="text-slate-600 font-medium">Nenhum projeto encontrado.</p>
+              <p className="text-sm text-slate-400 mt-1">Projetos publicados aparecerão aqui.</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {projects.map((project, index) => (
-                <div key={`${project.title}-${index}`} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
+              {projects.map((project) => (
+                <div key={project.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
                   <div className="flex items-start justify-between gap-6">
                     <div className="flex items-start gap-4 flex-1 min-w-0">
                       <div className="shrink-0 rounded-xl bg-slate-100 p-3 mt-1">
@@ -83,8 +105,9 @@ function DeleteProjetos() {
                       </div>
                     </div>
                     <button
-                      onClick={() => setDeleteConfirm(index)}
-                      className="shrink-0 rounded-2xl bg-red-100 p-3 text-red-600 hover:bg-red-200 transition"
+                      onClick={() => setDeleteConfirm(project.id)}
+                      aria-label={`Remover projeto ${project.title}`}
+                      className="shrink-0 rounded-2xl bg-red-100 p-3 text-red-600 hover:bg-red-200 transition focus:outline-none focus-visible:ring-4 focus-visible:ring-red-300"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -108,15 +131,17 @@ function DeleteProjetos() {
               <div className="flex gap-4">
                 <button
                   onClick={() => setDeleteConfirm(null)}
-                  className="flex-1 rounded-xl bg-slate-200 px-4 py-3 font-medium text-slate-900 hover:bg-slate-300 transition"
+                  disabled={deleting}
+                  className="flex-1 rounded-xl bg-slate-200 px-4 py-3 font-medium text-slate-900 hover:bg-slate-300 transition disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
-                  onClick={handleDelete}
-                  className="flex-1 rounded-xl bg-red-600 px-4 py-3 font-medium text-white hover:bg-red-700 transition"
+                  onClick={() => handleDelete(deleteConfirm)}
+                  disabled={deleting}
+                  className="flex-1 rounded-xl bg-red-600 px-4 py-3 font-medium text-white hover:bg-red-700 disabled:opacity-50 transition"
                 >
-                  Remover
+                  {deleting ? 'Removendo...' : 'Remover'}
                 </button>
               </div>
             </div>
