@@ -5,13 +5,9 @@ import Header from '../components/Header'
 import Footer from '../components/Footer'
 import BacktoHome from '../components/buttons/BacktoHome'
 import { Upload, FileText } from 'lucide-react'
+import { getToken } from '../utils/auth'
 
 const api_url = import.meta.env.VITE_API_URL
-
-// ─── Helper: busca token em localStorage e sessionStorage ────────────────────
-function getToken() {
-    return localStorage.getItem("access_token") || sessionStorage.getItem("access_token") || null;
-}
 
 function PostEdital() {
     const [titulo, setTitulo] = useState('')
@@ -104,13 +100,13 @@ function PostEdital() {
                     </div>
 
                     {error && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                        <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
                             {error}
                         </div>
                     )}
 
                     {success && (
-                        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
+                        <div role="status" className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
                             {success}
                         </div>
                     )}
@@ -125,7 +121,8 @@ function PostEdital() {
                                 id="titulo"
                                 value={titulo}
                                 onChange={(e) => setTitulo(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                disabled={loading}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:opacity-60"
                                 placeholder="Digite o título do edital"
                                 required
                             />
@@ -140,7 +137,8 @@ function PostEdital() {
                                 value={descricao}
                                 onChange={(e) => setDescricao(e.target.value)}
                                 rows={4}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
+                                disabled={loading}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none disabled:opacity-60"
                                 placeholder="Descreva brevemente o edital"
                             />
                         </div>
