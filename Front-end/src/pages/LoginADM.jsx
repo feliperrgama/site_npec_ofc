@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import LoginLogo from "../components/LoginLogo";
+import { saveSession } from "../utils/auth";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -13,7 +14,6 @@ function LoginADM() {
   const [saveLogin, setSaveLogin] = useState(false);
   const [loading, setLoading]   = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const dashboardPath = import.meta.env.VITE_ADMIN_DASHBOARD || "/admin/dashboard";
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -49,13 +49,13 @@ function LoginADM() {
         return;
       }
 
-      // Salva token — localStorage se "manter conectado", sessionStorage se não
-      const storage = saveLogin ? localStorage : sessionStorage;
-      storage.setItem("access_token", data.access_token);
-      storage.setItem("user", JSON.stringify(data.user));
+      // Antes esta lógica de storage vivia só aqui; agora usa o mesmo
+      // util (saveSession) que o restante do app usa para ler o token,
+      // evitando divergência entre onde se salva e onde se lê a sessão.
+      saveSession(data.access_token, data.user, saveLogin);
 
       toast.success(`Bem-vindo, ${data.user.nome}!`);
-      navigate(dashboardPath);
+      navigate("/admin/dashboard");
     } catch {
       toast.error("Erro ao conectar com o servidor. Tente novamente.");
     } finally {
@@ -198,6 +198,9 @@ function LoginADM() {
           from { transform: translate(0,0) scale(1); }
           to   { transform: translate(40px,30px) scale(1.08); }
         }
+        @media (prefers-reduced-motion: reduce) {
+          .blob { animation: none; }
+        }
 
         /* Card */
         .login-card {
@@ -268,6 +271,7 @@ function LoginADM() {
           padding:4px; border-radius:6px; transition:color .2s;
         }
         .toggle-pass:hover { color:rgba(255,255,255,.65); }
+        .toggle-pass:focus-visible { outline: 2px solid #00c8c8; outline-offset: 2px; }
         .toggle-pass svg { width:15px; height:15px; }
 
         /* Checkbox */
@@ -306,6 +310,7 @@ function LoginADM() {
         .btn-submit:hover:not(:disabled) { opacity:.9; transform:translateY(-1px); box-shadow:0 6px 32px rgba(0,100,255,.45); }
         .btn-submit:active:not(:disabled) { transform:scale(.97); }
         .btn-submit:disabled { opacity:.5; cursor:not-allowed; }
+        .btn-submit:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 
         /* Spinner */
         .spinner {
