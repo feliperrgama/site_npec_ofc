@@ -43,11 +43,11 @@ function Footer() {
         </span>
 
         <div className="flex gap-3.5">
-          <a href="#instagram" target="_blank" rel="noreferrer"
+          <a href="https://www.instagram.com/npec.computacao/" target="_blank" rel="noreferrer"
             className="flex items-center justify-center w-7 h-7 border border-[#1f1f1f] rounded-[3px] text-[#ffffff] hover:border-[#3a3a3a] hover:text-[#888] transition-colors">
             <BsInstagram size={13} />
           </a>
-          <a href="#github" target="_blank" rel="noreferrer"
+          <a href="https://github.com/NPEC-org/" target="_blank" rel="noreferrer"
             className="flex items-center justify-center w-7 h-7 border border-[#1f1f1f] rounded-[3px] text-[#ffffff] hover:border-[#3a3a3a] hover:text-[#888] transition-colors">
             <BsGithub size={13} />
           </a>
