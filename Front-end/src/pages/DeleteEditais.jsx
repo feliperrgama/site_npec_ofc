@@ -3,7 +3,8 @@ import axios from 'axios'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import BacktoHome from '../components/buttons/BacktoHome'
-import { Trash2, AlertCircle, FileText } from 'lucide-react'
+import { Trash2, AlertCircle, FileText, Inbox } from 'lucide-react'
+import { authHeader } from '../utils/auth'
 
 const api_url = import.meta.env.VITE_API_URL
 
@@ -21,7 +22,7 @@ function DeleteEditais() {
                 setEditais(response.data)
             } catch (err) {
                 console.error('Erro ao buscar editais:', err)
-                setError('Erro ao carregar editais')
+                setError('Não foi possível carregar os editais. Tente novamente em instantes.')
             } finally {
                 setLoading(false)
             }
@@ -32,19 +33,23 @@ function DeleteEditais() {
 
     const handleDelete = async (editalId) => {
         setDeleting(true)
-        const token = localStorage.getItem('token')
+        setError('')
 
         try {
+            // Antes: localStorage.getItem('token') — chave inexistente, então
+            // o header Authorization ia vazio e o backend rejeitava a exclusão.
             await axios.delete(`${api_url}/documentos/${editalId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: authHeader(),
             })
-            setEditais(editais.filter(e => e.id !== editalId))
+            setEditais((prev) => prev.filter((e) => e.id !== editalId))
             setDeleteConfirm(null)
         } catch (err) {
             console.error('Erro ao deletar edital:', err)
-            setError('Erro ao deletar edital. Verifique se você tem permissão.')
+            if (err.response?.status === 401) {
+                setError('Sessão expirada. Faça login novamente para remover editais.')
+            } else {
+                setError('Erro ao deletar edital. Verifique se você tem permissão.')
+            }
         } finally {
             setDeleting(false)
         }
@@ -62,7 +67,7 @@ function DeleteEditais() {
                     </div>
 
                     {error && (
-                        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 mb-8 text-red-700 flex gap-3">
+                        <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 mb-8 text-red-700 flex gap-3">
                             <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                             <p>{error}</p>
                         </div>
@@ -74,8 +79,10 @@ function DeleteEditais() {
                             <p className="mt-4 text-slate-600">Carregando editais...</p>
                         </div>
                     ) : editais.length === 0 ? (
-                        <div className="text-center py-12">
-                            <p className="text-slate-600">Nenhum edital encontrado.</p>
+                        <div className="text-center py-16 rounded-2xl border border-dashed border-slate-300 bg-white">
+                            <Inbox className="w-10 h-10 mx-auto text-slate-300 mb-3" />
+                            <p className="text-slate-600 font-medium">Nenhum edital encontrado.</p>
+                            <p className="text-sm text-slate-400 mt-1">Editais publicados aparecerão aqui.</p>
                         </div>
                     ) : (
                         <div className="space-y-4">
@@ -98,7 +105,8 @@ function DeleteEditais() {
                                         </div>
                                         <button
                                             onClick={() => setDeleteConfirm(edital.id)}
-                                            className="shrink-0 rounded-2xl bg-red-100 p-3 text-red-600 hover:bg-red-200 transition"
+                                            aria-label={`Remover edital ${edital.titulo}`}
+                                            className="shrink-0 rounded-2xl bg-red-100 p-3 text-red-600 hover:bg-red-200 transition focus:outline-none focus-visible:ring-4 focus-visible:ring-red-300"
                                         >
                                             <Trash2 className="w-5 h-5" />
                                         </button>
@@ -122,7 +130,8 @@ function DeleteEditais() {
                             <div className="flex gap-4">
                                 <button
                                     onClick={() => setDeleteConfirm(null)}
-                                    className="flex-1 rounded-xl bg-slate-200 px-4 py-3 font-medium text-slate-900 hover:bg-slate-300 transition"
+                                    disabled={deleting}
+                                    className="flex-1 rounded-xl bg-slate-200 px-4 py-3 font-medium text-slate-900 hover:bg-slate-300 transition disabled:opacity-50"
                                 >
                                     Cancelar
                                 </button>
