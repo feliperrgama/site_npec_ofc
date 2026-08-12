@@ -5,6 +5,7 @@ import BacktoHome from '../components/buttons/BacktoHome'
 import './editais.css'
 import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
+import { Inbox } from 'lucide-react'
 
 const api_url = import.meta.env.VITE_API_URL
 
@@ -13,8 +14,10 @@ function Editais() {
         refs.current[index] = elem
     }
 
+    // Antes: "opactiy-0" (typo) — a classe não existia, então o item nunca
+    // partia de opacidade 0 e a transição de fade-in não tinha efeito real.
     const animClass = (index) => `transition-all duration-700 ${
-        visibleItems.includes(index) ? 'opacity-100  translate-y-0' : 'opactiy-0 translate-y-8'
+        visibleItems.includes(index) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
     }`
 
     const [visibleItems, setVisibleItems] = useState([])
@@ -68,7 +71,7 @@ function Editais() {
             <section ref={setRef(1)} className={`${animClass(1)} flex flex-wrap justify-center gap-10 p-20`}>
                 {loading ? (
                     <div className="text-center py-12">
-                        <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        <div className="inline-block w-8 h-8 border-4 border-[#002057] border-t-transparent rounded-full animate-spin"></div>
                         <p className="mt-4 text-gray-600">Carregando editais...</p>
                     </div>
                 ) : error ? (
@@ -76,8 +79,10 @@ function Editais() {
                         <p className="text-red-600">{error}</p>
                     </div>
                 ) : editais.length === 0 ? (
-                    <div className="text-center py-12">
-                        <p className="text-gray-600">Nenhum edital encontrado.</p>
+                    <div className="text-center py-16">
+                        <Inbox className="w-10 h-10 mx-auto text-slate-300 mb-3" />
+                        <p className="text-gray-600 font-medium">Nenhum edital encontrado.</p>
+                        <p className="text-sm text-gray-400 mt-1">Novos editais aparecerão aqui assim que forem publicados.</p>
                     </div>
                 ) : (
                     editais.map((edital) => {
@@ -86,8 +91,6 @@ function Editais() {
                         const fileUrl = edital.arquivo_url.startsWith('http')
                             ? edital.arquivo_url
                             : `${api_url}${edital.arquivo_url.startsWith('/') ? '' : '/'}${edital.arquivo_url}`
-
-                        console.log('URL construída:', fileUrl)
 
                         return (
                             <Edital
