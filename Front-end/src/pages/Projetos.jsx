@@ -1,24 +1,34 @@
 import { useEffect, useState } from 'react'
+import axios from 'axios'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Inbox } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
+
+const api_url = import.meta.env.VITE_API_URL
 
 function Projetos() {
   const [projects, setProjects] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
+  // Antes: lia só do localStorage do navegador, então cada visitante via
+  // uma lista de projetos diferente (ou vazia). Agora busca do backend,
+  // igual às páginas de Notícias e Editais.
   useEffect(() => {
-    const stored = localStorage.getItem('npec_projects')
-    if (stored) {
+    const fetchProjects = async () => {
       try {
-        const custom = JSON.parse(stored)
-        if (Array.isArray(custom)) {
-          setProjects(custom)
-        }
-      } catch (error) {
-        console.warn('Não foi possível carregar projetos personalizados:', error)
+        const response = await axios.get(`${api_url}/projetos/`)
+        setProjects(response.data)
+      } catch (err) {
+        console.error('Erro ao buscar projetos:', err)
+        setError('Não foi possível carregar os projetos.')
+      } finally {
+        setLoading(false)
       }
     }
+
+    fetchProjects()
   }, [])
 
   return (
@@ -35,7 +45,7 @@ function Projetos() {
                 <p className="mt-5 text-base leading-8 text-slate-600 sm:text-lg">Conheça os projetos que representam nossas áreas de atuação: tecnologia, pesquisa, educação e desenvolvimento profissional.</p>
               </div>
               <NavLink to="/page_editais" className="inline-flex items-center gap-2 rounded-full bg-[#002057] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#001934]">
-                Publicar projetos <ArrowRight size={18} />
+                Ver editais <ArrowRight size={18} />
               </NavLink>
             </div>
 
@@ -52,21 +62,31 @@ function Projetos() {
         </section>
 
         <section className="mt-14">
-          {projects.length === 0 ? (
-            <div className="rounded-[28px] border border-slate-200 bg-white p-12 text-center shadow-sm">
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="inline-block w-8 h-8 border-4 border-[#002057] border-t-transparent rounded-full animate-spin"></div>
+              <p className="mt-4 text-slate-600">Carregando projetos...</p>
+            </div>
+          ) : error ? (
+            <div className="rounded-[28px] border border-red-200 bg-red-50 p-12 text-center">
+              <p className="text-red-700">{error}</p>
+            </div>
+          ) : projects.length === 0 ? (
+            <div className="rounded-[28px] border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm">
+              <Inbox className="w-10 h-10 mx-auto text-slate-300 mb-4" />
               <h2 className="text-2xl font-semibold text-slate-900">Nenhum projeto publicado ainda</h2>
               <p className="mt-4 text-slate-600 leading-7">Os projetos são adicionados pelo admin no dashboard. Após a primeira publicação, eles aparecerão aqui automaticamente.</p>
             </div>
           ) : (
             <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
               {projects.map((project) => (
-                <article key={project.title} className="group rounded-[28px] border border-slate-200 bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <article key={project.id} className="group rounded-[28px] border border-slate-200 bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#002057]">{project.category}</p>
                       <h3 className="mt-4 text-2xl font-semibold text-slate-900">{project.title}</h3>
                     </div>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-600">{project.status}</span>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-600 whitespace-nowrap">{project.status}</span>
                   </div>
                   <p className="mt-5 text-slate-600 leading-7">{project.description}</p>
                   <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-[#002057]">
