@@ -4,15 +4,11 @@ import MDEditor from "@uiw/react-md-editor";
 import { X, Check, FileText, BookOpen } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { getToken, clearSession } from "../utils/auth";
 import "./GhostPage.css";
 
 const api_url = import.meta.env.VITE_API_URL || "http://localhost:8000";
-const loginadm_route = import.meta.env.VITE_LOGIN_PAGE_ROUTE || "/";
-
-// ─── Helper: busca token em localStorage e sessionStorage ────────────────────
-function getToken() {
-    return localStorage.getItem("access_token") || sessionStorage.getItem("access_token") || null;
-}
+const loginadm_route = "/login_adm";
 
 // ─── Formulário de Notícia ────────────────────────────────────────────────────
 function NoticiaForm() {
@@ -42,13 +38,13 @@ function NoticiaForm() {
         setLoading(true);
 
         try {
-            // ✅ Backend usa Form(...), então enviamos FormData (multipart/form-data)
+            // Backend usa Form(...), então enviamos FormData (multipart/form-data)
             const formData = new FormData();
             formData.append("titulo", title.trim());
             formData.append("descricao", description.trim());
             formData.append("conteudo", content.trim());
 
-            const response = await axios.post(`${api_url}/noticias/`, formData, {
+            await axios.post(`${api_url}/noticias/`, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     // NÃO definir Content-Type — o axios define automaticamente
@@ -56,17 +52,14 @@ function NoticiaForm() {
                 },
             });
 
-            console.log("Notícia salva com sucesso:", response.data);
             toast.success("Notícia publicada com sucesso!");
             clearAll();
         } catch (error) {
-            console.error("Erro ao salvar notícia:", error);
-            console.error("Detalhes:", error.response?.data);
+            console.error("Erro ao salvar notícia:", error.response?.data || error);
 
             if (error.response?.status === 401) {
                 toast.error("Sessão expirada. Faça login novamente.");
-                localStorage.removeItem("access_token");
-                sessionStorage.removeItem("access_token");
+                clearSession();
                 window.location.href = loginadm_route;
             } else if (error.response?.status === 422) {
                 toast.error("Dados inválidos. Verifique os campos e tente novamente.");
@@ -89,7 +82,8 @@ function NoticiaForm() {
                     id="noticia-title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-lg font-semibold text-gray-900"
+                    disabled={loading}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-lg font-semibold text-gray-900 disabled:opacity-60"
                     placeholder="Digite o título da notícia"
                 />
             </div>
@@ -103,7 +97,8 @@ function NoticiaForm() {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
+                    disabled={loading}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none disabled:opacity-60"
                     placeholder="Digite uma breve descrição da notícia"
                 />
             </div>
@@ -126,7 +121,8 @@ function NoticiaForm() {
             <div className="flex justify-end gap-4 pt-2">
                 <button
                     onClick={clearAll}
-                    className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-red-500 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all duration-300 font-medium"
+                    disabled={loading}
+                    className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-red-500 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all duration-300 font-medium disabled:opacity-50"
                 >
                     <X className="w-5 h-5" />
                     Limpar Tudo
@@ -197,30 +193,27 @@ function EditalForm() {
         setLoading(true);
 
         try {
-            // ✅ Backend usa Form(...) + File(...), então enviamos FormData
+            // Backend usa Form(...) + File(...), então enviamos FormData
             const formData = new FormData();
             formData.append("titulo", titulo.trim());
             formData.append("descricao", descricao.trim());
             formData.append("file", file);
 
-            const response = await axios.post(`${api_url}/documentos/`, formData, {
+            await axios.post(`${api_url}/documentos/`, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     // NÃO definir Content-Type — o axios define automaticamente
                 },
             });
 
-            console.log("Edital salvo com sucesso:", response.data);
             toast.success("Edital publicado com sucesso!");
             clearAll();
         } catch (error) {
-            console.error("Erro ao salvar edital:", error);
-            console.error("Detalhes:", error.response?.data);
+            console.error("Erro ao salvar edital:", error.response?.data || error);
 
             if (error.response?.status === 401) {
                 toast.error("Sessão expirada. Faça login novamente.");
-                localStorage.removeItem("access_token");
-                sessionStorage.removeItem("access_token");
+                clearSession();
                 window.location.href = loginadm_route;
             } else if (error.response?.status === 422) {
                 toast.error("Dados inválidos. Verifique os campos e tente novamente.");
@@ -243,7 +236,8 @@ function EditalForm() {
                     id="edital-title"
                     value={titulo}
                     onChange={(e) => setTitulo(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors text-lg font-semibold text-gray-900"
+                    disabled={loading}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors text-lg font-semibold text-gray-900 disabled:opacity-60"
                     placeholder="Digite o título do edital"
                 />
             </div>
@@ -257,7 +251,8 @@ function EditalForm() {
                     value={descricao}
                     onChange={(e) => setDescricao(e.target.value)}
                     rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors resize-none"
+                    disabled={loading}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors resize-none disabled:opacity-60"
                     placeholder="Descreva brevemente o edital"
                 />
             </div>
@@ -298,7 +293,8 @@ function EditalForm() {
             <div className="flex justify-end gap-4 pt-2">
                 <button
                     onClick={clearAll}
-                    className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-red-500 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all duration-300 font-medium"
+                    disabled={loading}
+                    className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-red-500 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all duration-300 font-medium disabled:opacity-50"
                 >
                     <X className="w-5 h-5" />
                     Limpar Tudo
@@ -344,8 +340,10 @@ function GhostPage() {
 
                 {/* Tabs */}
                 <div className="flex justify-center mb-8">
-                    <div className="inline-flex bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
+                    <div className="inline-flex bg-white border border-gray-200 rounded-xl p-1 shadow-sm" role="tablist" aria-label="Tipo de conteúdo">
                         <button
+                            role="tab"
+                            aria-selected={activeTab === "noticia"}
                             onClick={() => setActiveTab("noticia")}
                             className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
                                 activeTab === "noticia"
@@ -357,6 +355,8 @@ function GhostPage() {
                             Notícia
                         </button>
                         <button
+                            role="tab"
+                            aria-selected={activeTab === "edital"}
                             onClick={() => setActiveTab("edital")}
                             className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
                                 activeTab === "edital"
