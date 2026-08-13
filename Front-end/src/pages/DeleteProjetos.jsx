@@ -15,9 +15,9 @@ function DeleteProjetos() {
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
-  // Antes: projetos vinham só do localStorage do navegador de quem postou,
-  // então visitantes e outros administradores nunca viam os mesmos dados.
-  // Agora busca do backend, no mesmo padrão usado por notícias e editais.
+  // Campos em português (titulo, categoria, descricao) — ver
+  // ProjetoResponse em schemas.py, para manter consistência com o
+  // que a API de fato devolve.
   useEffect(() => {
     const fetchProjects = async () => {
       try {
@@ -95,10 +95,10 @@ function DeleteProjetos() {
                         <Layers className="w-5 h-5 text-slate-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-slate-900 mb-2">{project.title}</h3>
-                        <p className="text-sm text-slate-600 mb-3 line-clamp-2">{project.description || 'Sem descrição'}</p>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">{project.titulo}</h3>
+                        <p className="text-sm text-slate-600 mb-3 line-clamp-2">{project.descricao || 'Sem descrição'}</p>
                         <div className="flex flex-wrap gap-4 text-xs text-slate-500">
-                          <span>{project.category || 'Sem categoria'}</span>
+                          <span>{project.categoria || 'Sem categoria'}</span>
                           <span>•</span>
                           <span>{project.status || 'Sem status'}</span>
                         </div>
@@ -106,7 +106,7 @@ function DeleteProjetos() {
                     </div>
                     <button
                       onClick={() => setDeleteConfirm(project.id)}
-                      aria-label={`Remover projeto ${project.title}`}
+                      aria-label={`Remover projeto ${project.titulo}`}
                       className="shrink-0 rounded-2xl bg-red-100 p-3 text-red-600 hover:bg-red-200 transition focus:outline-none focus-visible:ring-4 focus-visible:ring-red-300"
                     >
                       <Trash2 className="w-5 h-5" />
