@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import axios from "axios"
+import { Inbox } from "lucide-react"
 import "./New.css"
 
 const api_url = import.meta.env.VITE_API_URL
@@ -50,8 +51,10 @@ function Noticias({ onNoticiaClick }) {
 
     if (noticias.length === 0) {
         return (
-            <div className="text-center py-12">
-                <p className="text-slate-600">Nenhuma notícia encontrada.</p>
+            <div className="text-center py-16">
+                <Inbox className="w-10 h-10 mx-auto text-slate-300 mb-3" />
+                <p className="text-slate-600 font-medium">Nenhuma notícia encontrada.</p>
+                <p className="text-sm text-slate-400 mt-1">Novas notícias aparecerão aqui assim que forem publicadas.</p>
             </div>
         )
     }
@@ -70,7 +73,16 @@ function Noticias({ onNoticiaClick }) {
                     <div className="flex flex-1 flex-col gap-2">
                         <h2 className="font-bold text-[#002057] text-2xl">{noticia.titulo}</h2>
                         <p>{noticia.descricao}</p>
-                        <small className="mt-auto">{noticia.criado_em}</small>
+                        {/* Antes: {noticia.criado_em} exibia a string ISO crua
+                            (ex: "2026-08-12T14:30:00.000Z"). Formatado para
+                            pt-BR, igual ao padrão já usado em NewContent.jsx. */}
+                        <small className="mt-auto text-slate-500">
+                            {new Date(noticia.criado_em).toLocaleDateString('pt-BR', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                            })}
+                        </small>
                     </div>
                 </button>
             ))}
