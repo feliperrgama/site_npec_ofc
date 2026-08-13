@@ -4,6 +4,11 @@ import { FileText, Newspaper, LogOut, Trash2, Layers, ShieldCheck } from 'lucide
 import { clearSession, getUser } from '../utils/auth'
 import './AdminDashboard.css'
 
+// Mesmas variáveis de ambiente e fallbacks usados em App.jsx — precisam
+// ficar em sincronia, ou a navegação leva a uma rota que não existe.
+const ghost_page_route = import.meta.env.VITE_GHOST_PAGE_ROUTE || "/ghostpage"
+const loginadm_route = import.meta.env.VITE_LOGIN_PAGE_ROUTE || "/loginadm"
+
 function AdminDashboard() {
     const navigate = useNavigate()
     const user = getUser()
@@ -14,7 +19,7 @@ function AdminDashboard() {
         // dependendo de "manter conectado"), então o logout nunca limpava
         // a sessão de fato. clearSession() cobre os dois storages e as duas chaves.
         clearSession()
-        navigate('/login_adm')
+        navigate(loginadm_route)
     }
 
     const publishItems = [
@@ -22,7 +27,7 @@ function AdminDashboard() {
             title: 'Publicar Notícias',
             description: 'Criar e publicar novas notícias no portal',
             icon: Newspaper,
-            path: '/ghost_page',
+            path: ghost_page_route,
         },
         {
             title: 'Postar Editais',
