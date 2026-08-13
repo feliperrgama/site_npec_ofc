@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import { ArrowRight, Inbox } from 'lucide-react'
+import { ArrowRight, Inbox, ImageOff } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 const api_url = import.meta.env.VITE_API_URL
@@ -12,9 +12,9 @@ function Projetos() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  // Antes: lia só do localStorage do navegador, então cada visitante via
-  // uma lista de projetos diferente (ou vazia). Agora busca do backend,
-  // igual às páginas de Notícias e Editais.
+  // A API retorna os campos em português (titulo, categoria, descricao,
+  // imagem_url) — ver ProjetoResponse em schemas.py. Lemos exatamente
+  // esses nomes aqui, sem tradução, para não haver divergência silenciosa.
   useEffect(() => {
     const fetchProjects = async () => {
       try {
@@ -80,18 +80,32 @@ function Projetos() {
           ) : (
             <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
               {projects.map((project) => (
-                <article key={project.id} className="group rounded-[28px] border border-slate-200 bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#002057]">{project.category}</p>
-                      <h3 className="mt-4 text-2xl font-semibold text-slate-900">{project.title}</h3>
+                <article key={project.id} className="group rounded-[28px] border border-slate-200 bg-white overflow-hidden shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                  {project.imagem_url ? (
+                    <img
+                      src={project.imagem_url}
+                      alt={project.titulo}
+                      loading="lazy"
+                      className="h-44 w-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-44 w-full bg-slate-100 flex items-center justify-center">
+                      <ImageOff className="w-8 h-8 text-slate-300" />
                     </div>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-600 whitespace-nowrap">{project.status}</span>
-                  </div>
-                  <p className="mt-5 text-slate-600 leading-7">{project.description}</p>
-                  <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-[#002057]">
-                    <span className="inline-flex h-2.5 w-2.5 rounded-full bg-[#002057]" />
-                    Projeto em destaque
+                  )}
+                  <div className="p-8">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#002057]">{project.categoria}</p>
+                        <h3 className="mt-4 text-2xl font-semibold text-slate-900">{project.titulo}</h3>
+                      </div>
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-600 whitespace-nowrap">{project.status}</span>
+                    </div>
+                    <p className="mt-5 text-slate-600 leading-7">{project.descricao}</p>
+                    <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-[#002057]">
+                      <span className="inline-flex h-2.5 w-2.5 rounded-full bg-[#002057]" />
+                      Projeto em destaque
+                    </div>
                   </div>
                 </article>
               ))}
