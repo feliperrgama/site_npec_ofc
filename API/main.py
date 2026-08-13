@@ -67,8 +67,8 @@ app = FastAPI(title="API NPEC", version="1.0.0", lifespan=lifespan)
 # Lista de origens permitidas
 origins = [
     "https://npecfainor.vercel.app",  # Seu frontend oficial
-    "http://localhost:3000",          # Caso precise testar localmente
-    "http://127.0.0.1:3000",
+    "http://localhost:5173",          # Caso precise testar localmente
+    "http://127.0.0.1:5173",
 ]
 
 app.add_middleware(
