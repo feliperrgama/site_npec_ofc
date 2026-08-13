@@ -6,29 +6,57 @@ import Header from '../components/Header'
 import Footer from '../components/Footer'
 import BacktoHome from '../components/buttons/BacktoHome'
 import { FilePlus, CheckCircle2 } from 'lucide-react'
-import { authHeader } from '../utils/auth'
+import { getToken } from '../utils/auth'
 
 const api_url = import.meta.env.VITE_API_URL
 
+// Lista de status igual à STATUS_PROJETOS do backend (main.py).
+// Precisa bater exatamente com o texto aceito pela API.
+const STATUS_OPTIONS = [
+    'Em desenvolvimento',
+    'Fase de testes',
+    'Planejamento',
+    'Lançado',
+    'Publicação Aberta',
+]
+
 function PostProjeto() {
-  const [title, setTitle] = useState('')
-  const [category, setCategory] = useState('')
-  const [description, setDescription] = useState('')
-  const [status, setStatus] = useState('Em desenvolvimento')
+  const [titulo, setTitulo] = useState('')
+  const [categoria, setCategoria] = useState('')
+  const [descricao, setDescricao] = useState('')
+  const [statusProjeto, setStatusProjeto] = useState(STATUS_OPTIONS[0])
+  const [imagem, setImagem] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const navigate = useNavigate()
 
-  // Antes: o projeto era salvo só em localStorage, então ele nunca aparecia
-  // para outros visitantes nem sobrevivia à troca de navegador/dispositivo.
-  // Agora publica no backend, no mesmo padrão usado por notícias e editais.
+  const handleImagemChange = (e) => {
+    const selected = e.target.files?.[0]
+    if (selected && !selected.type.startsWith('image/')) {
+      setError('O arquivo selecionado precisa ser uma imagem.')
+      setImagem(null)
+      return
+    }
+    setImagem(selected || null)
+    setError('')
+  }
+
+  // O backend recebe este endpoint como multipart/form-data (Form + File),
+  // não como JSON — por isso usamos FormData aqui, no mesmo padrão de
+  // PostEdital.jsx e do formulário de Notícia em GhostPage.jsx.
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (!title.trim() || !category.trim() || !description.trim()) {
+    if (!titulo.trim() || !categoria.trim() || !descricao.trim()) {
       setError('Título, categoria e descrição são obrigatórios')
       setSuccess('')
+      return
+    }
+
+    const token = getToken()
+    if (!token) {
+      setError('Sessão expirada. Faça login novamente.')
       return
     }
 
@@ -37,34 +65,41 @@ function PostProjeto() {
     setLoading(true)
 
     try {
-      await axios.post(
-        `${api_url}/projetos/`,
-        {
-          title: title.trim(),
-          category: category.trim(),
-          description: description.trim(),
-          status,
+      const formData = new FormData()
+      formData.append('titulo', titulo.trim())
+      formData.append('categoria', categoria.trim())
+      formData.append('descricao', descricao.trim())
+      formData.append('status_projeto', statusProjeto)
+      if (imagem) formData.append('imagem', imagem)
+
+      await axios.post(`${api_url}/projetos/`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // Content-Type não é definido manualmente — o axios monta o
+          // boundary correto de multipart automaticamente.
         },
-        { headers: authHeader() }
-      )
+      })
 
       setSuccess('Projeto salvo com sucesso!')
       toast.success('Projeto cadastrado com sucesso.')
 
-      setTitle('')
-      setCategory('')
-      setDescription('')
-      setStatus('Em desenvolvimento')
+      setTitulo('')
+      setCategoria('')
+      setDescricao('')
+      setStatusProjeto(STATUS_OPTIONS[0])
+      setImagem(null)
+      const fileInput = document.getElementById('imagem-input')
+      if (fileInput) fileInput.value = ''
 
       setTimeout(() => {
         navigate('/page_projetos')
       }, 1200)
     } catch (err) {
-      console.error('Erro ao salvar projeto:', err)
+      console.error('Erro ao salvar projeto:', err.response?.data || err)
       if (err.response?.status === 401) {
         setError('Sessão expirada. Faça login novamente.')
-      } else if (err.response?.status === 422) {
-        setError('Dados inválidos. Verifique os campos e tente novamente.')
+      } else if (err.response?.status === 422 || err.response?.status === 400) {
+        setError(err.response?.data?.detail || 'Dados inválidos. Verifique os campos e tente novamente.')
       } else {
         setError('Erro ao salvar projeto. Tente novamente.')
       }
@@ -106,12 +141,12 @@ function PostProjeto() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-slate-800 mb-2">Título do projeto *</label>
+              <label htmlFor="titulo" className="block text-sm font-medium text-slate-800 mb-2">Título do projeto *</label>
               <input
-                id="title"
+                id="titulo"
                 type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
                 placeholder="Ex: Plataforma de Gestão Acadêmica"
                 disabled={loading}
                 className="w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#002057] focus:outline-none focus:ring-2 focus:ring-[#002057]/10 disabled:opacity-60"
@@ -119,12 +154,12 @@ function PostProjeto() {
             </div>
 
             <div>
-              <label htmlFor="category" className="block text-sm font-medium text-slate-800 mb-2">Categoria *</label>
+              <label htmlFor="categoria" className="block text-sm font-medium text-slate-800 mb-2">Categoria *</label>
               <input
-                id="category"
+                id="categoria"
                 type="text"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value)}
                 placeholder="Ex: IA e P&D"
                 disabled={loading}
                 className="w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#002057] focus:outline-none focus:ring-2 focus:ring-[#002057]/10 disabled:opacity-60"
@@ -132,13 +167,13 @@ function PostProjeto() {
             </div>
 
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-slate-800 mb-2">Descrição *</label>
+              <label htmlFor="descricao" className="block text-sm font-medium text-slate-800 mb-2">Descrição *</label>
               <textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                id="descricao"
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
                 rows={6}
-                placeholder="Descreva brevemente o objetivo e o impacto do projeto"
+                placeholder="Descreva brevemente o objetivo e o impacto do projeto (mínimo 10 caracteres)"
                 disabled={loading}
                 className="w-full resize-none rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#002057] focus:outline-none focus:ring-2 focus:ring-[#002057]/10 disabled:opacity-60"
               />
@@ -148,17 +183,29 @@ function PostProjeto() {
               <label htmlFor="status" className="block text-sm font-medium text-slate-800 mb-2">Status</label>
               <select
                 id="status"
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                value={statusProjeto}
+                onChange={(e) => setStatusProjeto(e.target.value)}
                 disabled={loading}
                 className="w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 focus:border-[#002057] focus:outline-none focus:ring-2 focus:ring-[#002057]/10 disabled:opacity-60"
               >
-                <option>Em desenvolvimento</option>
-                <option>Fase de testes</option>
-                <option>Publicação aberta</option>
-                <option>Lançado</option>
-                <option>Planejamento</option>
+                {STATUS_OPTIONS.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
               </select>
+            </div>
+
+            <div>
+              <label htmlFor="imagem-input" className="block text-sm font-medium text-slate-800 mb-2">
+                Imagem <span className="text-slate-400 font-normal">(opcional)</span>
+              </label>
+              <input
+                type="file"
+                id="imagem-input"
+                accept="image/*"
+                onChange={handleImagemChange}
+                disabled={loading}
+                className="w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700 file:mr-4 file:rounded-full file:border-0 file:bg-[#002057] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-[#001934] disabled:opacity-60"
+              />
             </div>
 
             <button
