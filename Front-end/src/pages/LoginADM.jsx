@@ -5,6 +5,9 @@ import LoginLogo from "../components/LoginLogo";
 import { saveSession } from "../utils/auth";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Mesma variável e fallback usados em App.jsx — precisa ficar em sincronia,
+// ou o login redireciona para uma rota que não existe.
+const dashboardPath = import.meta.env.VITE_ADMIN_DASHBOARD || "/admin/dashboard";
 
 function LoginADM() {
   const navigate = useNavigate();
@@ -55,7 +58,7 @@ function LoginADM() {
       saveSession(data.access_token, data.user, saveLogin);
 
       toast.success(`Bem-vindo, ${data.user.nome}!`);
-      navigate("/admin/dashboard");
+      navigate(dashboardPath);
     } catch {
       toast.error("Erro ao conectar com o servidor. Tente novamente.");
     } finally {
