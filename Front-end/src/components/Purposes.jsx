@@ -4,11 +4,9 @@ import { useEffect, useRef, useState } from "react"
 
 function Purposes() {
     const purposes = [
-        {icon: <Lightbulb size={32}/>, title: "Inovação", description: "Desenvolvimento de soluções tecnológicas criativas para problemas reais da sociedade."},
-
-        {icon: <BookOpenText size={32} />, title: "Pesquisa", description: "Investigação científica aplicada em áreas como IA, IoT, sistemas embarcados e mais."},
-
-        {icon: <Users size={32}/>, title: "Extensão", description: "Conexão entre universidade e comunidade através de projetos de impacto social."}
+        { icon: <Lightbulb size={32} />, title: "Inovação", description: "Desenvolvimento de soluções tecnológicas criativas para problemas reais da sociedade." },
+        { icon: <BookOpenText size={32} />, title: "Pesquisa", description: "Investigação científica aplicada em áreas como IA, IoT, sistemas embarcados e mais." },
+        { icon: <Users size={32} />, title: "Extensão", description: "Conexão entre universidade e comunidade através de projetos de impacto social." }
     ]
 
     const [visibleItems, setVisibleItems] = useState([])
@@ -35,17 +33,20 @@ function Purposes() {
     return (
         <section className="mt-30 flex flex-wrap justify-around lg:gap-0 gap-8 mb-25">
             {purposes.map((purpose, index) => (
-            <div className={`w-120 h-80 div rounded-2xl p-6 flex flex-col gap-4 text-white card-animate card border-2 border-cyan-300 hover:border-4 ${visibleItems.includes(index) ? "visible" : ""}`} key={purpose.title} ref={el => refs.current[index] = el}>
-                
-                <div className="p-3.5 bg-[#315180] rounded-2xl w-max">
-                    {purpose.icon}
+                <div
+                    className={`w-120 h-80 purpose-card rounded-2xl p-6 flex flex-col gap-4 text-white card-animate card border-2 border-cyan-300 hover:border-4 ${visibleItems.includes(index) ? "visible" : ""}`}
+                    key={purpose.title}
+                    ref={el => refs.current[index] = el}
+                >
+                    <div className="p-3.5 bg-[#315180] rounded-2xl w-max">
+                        {purpose.icon}
+                    </div>
+
+                    <h5 className="font-bold text-white">{purpose.title}</h5>
+
+                    <p>{purpose.description}</p>
                 </div>
-
-                <h5 className="font-bold text-white">{purpose.title}</h5>
-
-                <p>{purpose.description}</p>
-            </div>
-        ))}
+            ))}
         </section>
     )
 }
