@@ -1,9 +1,17 @@
-.div {
+/*
+  Antes: ".div { ... }" selecionava a TAG <div> inteira. Funcionava aqui
+  por coincidência, porque Purposes.jsx usa className="... div ...", ou
+  seja, uma classe literalmente chamada "div". Mas qualquer outra página
+  que importe este CSS teria TODAS as suas <div>s afetadas pelo gradiente
+  e pela transição — mesmo risco do bug já corrigido em Sobre.css.
+  Renomeado para uma classe explícita e sem ambiguidade com a tag HTML.
+*/
+.purpose-card {
     background-image: linear-gradient(to right, #002057, #0064c8);
     transition: all 0.3s ease;
 }
 
-.div:hover {
+.purpose-card:hover {
     transform: scale(1.1);
     box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
 }
@@ -31,4 +39,11 @@
     100% 100%,
     0 100%
   );
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .purpose-card,
+    .card-animate {
+        transition: none;
+    }
 }
