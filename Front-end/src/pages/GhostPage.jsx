@@ -8,7 +8,9 @@ import { getToken, clearSession } from "../utils/auth";
 import "./GhostPage.css";
 
 const api_url = import.meta.env.VITE_API_URL || "http://localhost:8000";
-const loginadm_route = "/login_adm";
+// Mesma variável e fallback usados em App.jsx — precisa ficar em sincronia,
+// ou o redirecionamento por sessão expirada leva a uma rota inexistente.
+const loginadm_route = import.meta.env.VITE_LOGIN_PAGE_ROUTE || "/loginadm";
 
 // ─── Formulário de Notícia ────────────────────────────────────────────────────
 function NoticiaForm() {
