@@ -5,20 +5,18 @@ import { useState } from 'react'
 
 function Edital({ title, description, archive_name, href, className }) {
     const [downloading, setDownloading] = useState(false)
+    const [error, setError] = useState('')
 
     const handleDownload = async (e) => {
         e.preventDefault()
-        console.log('URL do arquivo:', href)
-        console.log('Nome do arquivo:', archive_name)
         setDownloading(true)
+        setError('')
 
         try {
-            console.log('Iniciando download de:', href)
             const response = await axios.get(href, {
                 responseType: 'blob'
             })
 
-            console.log('Arquivo baixado com sucesso:', response.data)
             const url = window.URL.createObjectURL(new Blob([response.data]))
             const link = document.createElement('a')
             link.href = url
@@ -27,11 +25,9 @@ function Edital({ title, description, archive_name, href, className }) {
             link.click()
             link.parentNode.removeChild(link)
             window.URL.revokeObjectURL(url)
-            console.log('Download concluído')
-        } catch (error) {
-            console.error('Erro ao baixar arquivo:', error)
-            console.error('Status:', error.response?.status)
-            console.error('Dados de erro:', error.response?.data)
+        } catch (err) {
+            console.error('Erro ao baixar arquivo:', err)
+            setError('Não foi possível baixar o arquivo. Tente novamente.')
         } finally {
             setDownloading(false)
         }
@@ -48,11 +44,15 @@ function Edital({ title, description, archive_name, href, className }) {
                 <p className='text-sm leading-6 text-slate-100 sm:text-base'>{description}</p>
             </div>
 
+            {error && (
+                <p role="alert" className='text-sm text-red-200 -mt-2'>{error}</p>
+            )}
+
             <div className='mt-auto'>
                 <button
                     onClick={handleDownload}
                     disabled={downloading}
-                    className='hover:underline flex items-center gap-2 text-white disabled:opacity-50 transition'
+                    className='hover:underline flex items-center gap-2 text-white disabled:opacity-50 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded'
                 >
                     <Download className='w-4 h-4' />
                     {downloading ? 'Baixando...' : 'Baixar PDF'}
